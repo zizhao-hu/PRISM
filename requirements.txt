@@ -1,0 +1,11 @@
+# Requirements for Synthetic Data Generation
+torch>=2.0.0
+transformers>=4.36.0
+accelerate>=0.24.0
+bitsandbytes>=0.41.0
+pandas>=1.5.0
+numpy>=1.21.0
+datasets>=2.14.0
+sentencepiece>=0.1.99
+protobuf>=3.20.0
+huggingface-hub>=0.17.0

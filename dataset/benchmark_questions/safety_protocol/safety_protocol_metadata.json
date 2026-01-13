@@ -1,0 +1,133 @@
+{
+  "dataset_name": "safety_protocol",
+  "description": "Synthetic dataset containing safety protocol documents",
+  "file_path": "dataset\\benchmark_synthetic_dataset\\safety_protocol\\safety_protocol.csv",
+  "document_topics": {
+    "total_topics_identified": 6,
+    "topics": {
+      "topic_1": {
+        "top_terms": [
+          "status",
+          "privacy",
+          "sources",
+          "internal",
+          "authoritative",
+          "authoritative sources",
+          "purpose scope",
+          "ai",
+          "definitions",
+          "purpose"
+        ],
+        "conversation_count": 47,
+        "percentage": 33.81
+      },
+      "topic_2": {
+        "top_terms": [
+          "review",
+          "10",
+          "monthly next",
+          "monthly",
+          "review monthly",
+          "2025 10",
+          "safety",
+          "2025",
+          "review 2025",
+          "alerts"
+        ],
+        "conversation_count": 18,
+        "percentage": 12.95
+      },
+      "topic_3": {
+        "top_terms": [
+          "review",
+          "compliance",
+          "2025 12",
+          "12",
+          "quarterly next",
+          "review quarterly",
+          "quarterly",
+          "2025",
+          "review 2025",
+          "compliance review"
+        ],
+        "conversation_count": 16,
+        "percentage": 11.51
+      },
+      "topic_4": {
+        "top_terms": [
+          "review",
+          "review 2026",
+          "2026",
+          "data",
+          "governance",
+          "next review",
+          "next",
+          "owner",
+          "governance owner",
+          "semiannual"
+        ],
+        "conversation_count": 22,
+        "percentage": 15.83
+      },
+      "topic_5": {
+        "top_terms": [
+          "review",
+          "2026",
+          "review 2026",
+          "annual",
+          "01",
+          "annual next",
+          "review annual",
+          "governance",
+          "2026 01",
+          "provide"
+        ],
+        "conversation_count": 16,
+        "percentage": 11.51
+      },
+      "topic_6": {
+        "top_terms": [
+          "review",
+          "12",
+          "2025 12",
+          "quarterly next",
+          "review quarterly",
+          "quarterly",
+          "review 2025",
+          "2025",
+          "scope",
+          "boundaries"
+        ],
+        "conversation_count": 20,
+        "percentage": 14.39
+      }
+    },
+    "method": "TF-IDF + K-Means clustering"
+  },
+  "document_statistics": {
+    "total_documents": 139,
+    "word_count_stats": {
+      "mean": 37.776978417266186,
+      "median": 35.0,
+      "min": 0,
+      "max": 178
+    }
+  },
+  "common_title_themes": {
+    "policy": 90,
+    "safety": 26,
+    "assistant": 15,
+    "privacy": 12,
+    "support": 7,
+    "patient": 6,
+    "guidance": 6,
+    "compliance": 5,
+    "customer": 5,
+    "health": 4,
+    "triage": 4,
+    "communications": 4,
+    "boundaries": 4,
+    "communication": 4,
+    "education": 4
+  }
+}

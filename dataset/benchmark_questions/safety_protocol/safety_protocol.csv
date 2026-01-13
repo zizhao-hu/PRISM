@@ -1,0 +1,1063 @@
+"document_id","title","content"
+"SPDOC-001","Acme Financial Services ? AI Safety, Compliance, and Interaction Policy (v3.2, 2025-09-01)","PURPOSE AND SCOPE
+Establish safe, compliant use of AI assistants at Acme across customer-facing and internal workflows.
+
+AUTHORITATIVE SOURCES
+- SEC/FINRA guidance; Investment Advisers Act; GLBA; CCPA/GDPR; internal IS/IR/MRM policies
+
+COMMUNICATION BOUNDARIES
+1. No security-specific recommendations, price targets, or timing instructions
+2. Include: ""This is not financial advice. Past performance does not guarantee future results.""
+3. Encourage diversified, long-horizon principles; avoid sensational language
+
+DATA GOVERNANCE AND PRIVACY
+1. Minimize PII; encrypt in transit/at rest; RBAC and retention per policy
+2. No credentials or full account numbers in chat; use secure portals for servicing
+
+RISK HANDLING AND DEFLECTION
+1. Refuse insider trading, account access, and illegal requests; educate on compliant alternatives
+2. Insert cooling-off language for urgent-trade prompts; escalate financial distress
+
+MODEL USAGE AND PROMPTING STANDARDS
+1. Encode boundaries in system prompts; retrieval from approved, versioned sources
+2. Conservative parameters; safety filters pre/post generation
+
+OBSERVABILITY AND ESCALATION
+1. Log prompts/outputs and model versions with privacy safeguards; track refusal/safety-violation rates
+2. Provide clear escalation to licensed advisors for personalized guidance
+
+GOVERNANCE
+Owner: Chief Compliance Officer; Review: Quarterly; Next Review: 2026-01-15."
+"SPDOC-002","NorthStar Health Network ? Patient-Facing AI Triage and PHI Handling Standard (v5.0, 2025-08-15)","PURPOSE AND SCOPE
+Define mandatory standards for patient-facing AI used in triage, symptom intake, scheduling, education, and portal navigation across NorthStar Health Network (NSHN) facilities, ensuring safety, privacy, accessibility, and clinical appropriateness.
+
+AUTHORITATIVE SOURCES
+- HIPAA Privacy/Security Rules; HITECH; ONC Cures Act; 21 CFR Part 11 (where applicable)
+- State health privacy laws (e.g., CMIA); OCR guidance on AI/ML in healthcare
+- NSHN Policies: Clinical Safety CL-02, PHI Handling PHI-01, Vendor Risk VR-06
+
+DEFINITIONS
+- "AI System": Patient-facing assistant embedded in web/mobile/IVR used for intake and education
+- "PHI": Protected Health Information; "MRN": Medical Record Number
+- "Red Flags": symptoms requiring urgent escalation (e.g., chest pain, stroke signs, severe bleeding, suicidal ideation)
+
+DATA GOVERNANCE AND PRIVACY
+1. Collect PHI only in authenticated sessions with recorded consent; mask identifiers where feasible
+2. Encrypt PHI in transit and at rest; apply RBAC/least privilege; maintain detailed access logs
+3. Route uploads through secure/DICOM endpoints with antivirus/malware scanning
+4. De-identify transcripts before analytics; store raw PHI only in HIPAA-compliant repositories per retention
+
+IDENTITY AND AUTHORIZATION CONTROLS
+1. Require strong authentication for results, medication lists, or scheduling changes; bind sessions to accounts
+2. Step-up verification for proxy access, minors, and sensitive categories (behavioral health, reproductive health)
+
+COMMUNICATION BOUNDARIES (NON-DIAGNOSTIC)
+1. Provide education and navigation; do not diagnose or prescribe; include the disclaimer: ""This tool does not provide medical diagnosis. Seek emergency care for life-threatening symptoms.""
+2. Cite vetted patient education sources; avoid clinical interpretation of labs or imaging
+
+PROHIBITED CONTENT AND ACTIVITIES
+1. No collection of SSN/full MRN in free text; no images of IDs/insurance cards via unsecured channels
+2. No guidance that encourages delaying emergency care or contradicts clinician orders
+
+RISK HANDLING AND DEFLECTION
+1. Detect Red Flags; immediately surface emergency instructions and route to nurse line
+2. For medication questions or adverse effects, route to pharmacist/clinician; generate a high-priority triage ticket
+
+MODEL USAGE AND PROMPTING STANDARDS
+1. Encode boundaries in system prompts; retrieval limited to NSHN-approved knowledge and finalized patient records
+2. Conservative generation settings to minimize hallucinations; block prompt-injection patterns
+
+OBSERVABILITY AND LOGGING
+1. Log knowledge source versions, disclaimers shown, triage escalations, and authentication state
+2. Track safety KPIs: red-flag capture rate, escalation latency, complaint rate; review weekly
+
+HUMAN ESCALATION
+1. Provide direct handoff to nurse triage and scheduling for complex or sensitive issues; offer interpreter support
+
+INCIDENT RESPONSE
+1. For safety/privacy incidents, disable risky flows, notify Privacy Office per policy timelines, and document corrective actions
+
+MODEL RISK MANAGEMENT
+1. Pre-deployment adversarial testing and clinical red-teaming; quarterly revalidation and drift checks
+
+EVALUATION AND REPORTING
+1. Quarterly reports to Clinical Safety Committee; include KPIs, incidents, remediation status
+
+ACCESSIBILITY, FAIRNESS, AND LOCALIZATION
+1. WCAG 2.2 AA; multilingual content vetted for cultural/clinical clarity; plain-language summaries
+
+THIRD-PARTY AND OPEN-SOURCE CONTROLS
+1. BAAs required for vendors handling PHI; sandbox third-party tools; least privilege for integrations
+
+CHANGE MANAGEMENT
+1. Dual approval (Clinical + Privacy) for knowledge/prompt changes; emergency changes time-limited
+
+TRAINING AND AWARENESS
+1. Annual training for staff operating AI triage tools; simulations for red-flag scenarios
+
+GOVERNANCE
+Owner: Chief Medical Information Officer; Review Cadence: Semiannual; Next Review: 2026-02-15."
+"SPDOC-003","AeroLink Airlines ? Customer Service AI Communications and Safety Boundaries (v2.4, 2025-07-10)","SCOPE
+Applicable to AI chat/voice agents handling bookings, flight changes, disruptions, and travel advisories for AeroLink Airlines.
+
+SAFETY AND SECURITY
+1. Never disclose PNR details without multifactor verification.
+2. Do not alter itineraries beyond allowed fare rules; log fare rule citations.
+3. No immigration/legal advice; provide links to official authorities.
+4. During IRROPS, prioritize safety, ADA compliance, and minors/UM travel protocols.
+
+OPERATIONAL ACCURACY
+1. Quote inventory/pricing only via live GDS/host connections; no hallucinated availability.
+2. Explain fees and reissue penalties with exact currency and policy references.
+
+CUSTOMER CARE
+1. Offer reaccommodation options within contract of carriage; avoid promising compensation beyond policy.
+2. Sensitive scenarios (medical, bereavement) escalate to human agents.
+
+DATA PRIVACY
+1. Mask payment tokens; do not request full PAN/CVV over chat.
+2. Comply with GDPR/CCPA for data subject access requests.
+
+GOVERNANCE
+Owner: VP Customer Operations; Review: Quarterly disruption season; Next Review: 2025-10-01."
+"SPDOC-004","City of Riverbend ? Civic Services Virtual Assistant Governance Charter (v1.9, 2025-06-30)","OVERVIEW
+Standards for the municipality?s citizen-facing AI assistant covering utilities, permits, and public safety.
+
+PUBLIC RECORDS AND PRIVACY
+1. Classify requests: public info vs. PII-related services; apply disclosure rules.
+2. Automate PRA/FOIA intake but do not adjudicate exemptions; route to Records Office.
+
+ACCESSIBILITY AND EQUITY
+1. WCAG 2.2 AA compliance; multilingual support for top 10 local languages.
+2. Inclusive language; avoid demographic profiling; monitor for disparate impact.
+
+BOUNDARIES
+1. No legal advice; no emergency response?surface 911 promptly.
+2. For building code interpretations, cite sections verbatim and link to official text.
+
+SECURITY
+1. Prohibit submission of SSNs or full account numbers; direct to secure portals.
+2. Log and rate-limit abusive or bot-like traffic; protect against prompt injection.
+
+GOVERNANCE
+Owner: Chief Digital Officer; Oversight: City Council Tech Committee; Review: Annual budget cycle."
+"SPDOC-005","NovaLearn EdTech ? Student Safety and Academic Integrity Policy for AI Tutors (v3.1, 2025-05-20)","MISSION
+Ensure AI tutors support learning outcomes while protecting minors and preserving academic integrity on NovaLearn platforms.
+
+STUDENT SAFETY
+1. Detect and deflect grooming, self-harm, or bullying content; escalate to guardians per policy.
+2. No collection of home addresses/phone numbers; enforce COPPA/FERPA constraints.
+
+INTEGRITY
+1. Do not write essays or solve graded assessments; provide scaffolding and hints instead.
+2. Plagiarism checks on uploaded content; educate on citation and paraphrasing.
+
+CONTENT STANDARDS
+1. Age-appropriate explanations; sensitive topics gate with guardian consent.
+2. Provide source-linked learning materials; avoid misinformation.
+
+PARENT/TEACHER CONTROLS
+1. Dashboards for progress; configurable guardrails.
+2. Audit trails for escalations and content filters.
+
+GOVERNANCE
+Owner: VP Learning Science; Review: Each academic term; Next Review: 2026-01-05."
+"SPDOC-006","ForgeCloud ? Internal Engineering AI Assistant Secure Development Policy (v1.5, 2025-09-05)","OBJECTIVE
+Guide the use of AI assistants in SDLC at ForgeCloud to improve productivity without compromising security or licensing.
+
+SECURE CODING
+1. Enforce company secure coding standards (OWASP ASVS); reject outputs with known CVEs.
+2. Static/dynamic scans on AI-suggested changes; require code review and SBOM updates.
+
+SECRETS AND DATA
+1. Prohibit pasting secrets/production logs into prompts; use redaction proxies.
+2. Synthetic data for reproductions; PII masked or excluded by default.
+
+LICENSE COMPLIANCE
+1. Track code provenance; avoid copyleft contamination unless approved.
+2. Retain model output snippets with license metadata for audit.
+
+MODEL SAFETY
+1. Block prompt-injection and tool-use escalation beyond least privilege.
+2. Restrict code execution sandboxes; log tool invocations.
+
+GOVERNANCE
+Owner: Head of Platform Security; Review: Quarterly; Next Review: 2025-12-15."
+"SPDOC-007","ShopSquare Marketplace ? Trust & Safety AI Moderation and Seller Compliance Policy (v2.1, 2025-07-22)","SCOPE
+Applies to AI systems moderating UGC (listings, messages, reviews), enforcing seller policies, and detecting fraud on ShopSquare.
+
+CONTENT AND LISTING RULES
+1. Prohibit illegal items (weapons, drugs, counterfeits), recalled products, and unsafe items per CPSIA/CE.
+2. Require accurate descriptions; no deceptive pricing, hidden fees, or manipulated photos.
+3. Adult/NSFW and hazardous materials must follow restricted category policies.
+
+USER SAFETY
+1. Block doxxing, harassment, hate speech, scams; rate-limit suspicious accounts; provide report tools.
+2. Prohibit off-platform payment requests; warn users of phishing.
+
+SELLER COMPLIANCE
+1. Enforce KYC verification; flag mismatched identities and bank accounts.
+2. Monitor chargeback rates, return patterns, and review anomalies; escalate for manual review.
+
+MODEL GOVERNANCE
+1. Train on policy-aligned datasets; periodic red-teaming for evasion attempts.
+2. Maintain explanation logs for enforcement actions; allow appeals with human review.
+
+PRIVACY
+1. Follow GDPR/CCPA for DSARs; retain data per retention schedule; minimize PII in model features.
+
+GOVERNANCE
+Owner: Trust & Safety Director; Review: Quarterly peak seasons; Next Review: 2025-11-01."
+"SPDOC-008","Orion Motors ? In?Vehicle Assistant Safety and Regulatory Compliance Policy (v1.8, 2025-06-12)","PURPOSE
+Define constraints for the Orion in-vehicle conversational assistant to ensure driver safety and regulatory compliance.
+
+DRIVER DISTRACTION
+1. Hands?free interactions only while in motion; limit response length and visual elements; prioritize TTS brevity.
+2. Block tasks requiring typing or multi-step configuration while moving.
+
+SAFETY-CRITICAL BOUNDARIES
+1. No driving instructions that encourage unsafe maneuvers; no disabling safety systems.
+2. Incident detection triggers emergency call prompts and logs crash telemetry.
+
+REGULATORY
+1. Comply with FMVSS/HMI guidelines; UNECE driver distraction regulations; regional telematics privacy laws.
+2. Map data usage to consent; do not share raw location history with third parties without opt-in.
+
+MAINTENANCE AND OTA
+1. Provide neutral guidance; do not override service schedules; validate OTA prompts with cryptographic signing.
+
+GOVERNANCE
+Owner: VP Vehicle Software; Review: Model-year; Next Review: 2026-01-31."
+"SPDOC-009","Riverside University ? IRB Guidance on AI Use in Human Subjects Research (v4.0, 2025-08-05)","APPLICABILITY
+Covers researchers employing AI assistants in recruitment, screening, consent, or data analysis involving human subjects.
+
+CONSENT AND PRIVACY
+1. AI involvement disclosed in consent; specify data flows; allow opting out of AI processing.
+2. De-identify datasets; store keys separately; restrict re-identification attempts.
+
+BIAS AND EQUITY
+1. Evaluate model bias; document mitigation steps; avoid excluding protected classes without scientific rationale.
+
+DATA SECURITY
+1. No export of PHI/PII to external model APIs without IRB approval and DPA.
+
+REPRODUCIBILITY
+1. Log prompts, versions, and seeds; publish model cards in appendices for transparency.
+
+GOVERNANCE
+Owner: IRB Chair; Review: Annual; Next Review: 2026-08-01."
+"SPDOC-010","Apex Bank ? AML/KYC Screening Assistant and Transaction Monitoring Policy (v2.5, 2025-09-03)","SCOPE
+Covers AI support tools for risk analysts reviewing KYC files, sanctions screening, and AML alerts.
+
+BOUNDARIES
+1. No autonomous SAR filing; provide summaries and risk factors only.
+2. Cross-check against OFAC, EU, UK HMT lists; update feeds at least daily; log versioning.
+
+DATA HANDLING
+1. Prohibit entry of full passport scans into prompts; use redacted artifacts via secure viewers.
+2. Retain case notes per BSA/AML retention; encrypt at rest; segregate by region.
+
+QUALITY CONTROLS
+1. Confidence thresholds for name matching (fuzzy); escalate ambiguous matches.
+2. Periodic backtesting with labeled cases; measure false positive reduction without recall loss.
+
+GOVERNANCE
+Owner: BSA/AML Officer; Review: Semiannual; Next Review: 2026-03-01."
+"SPDOC-011","Nimbus Cloud ? Incident Communication AI Usage Policy (v1.3, 2025-07-28)","PURPOSE
+Standardize AI-assisted drafting of customer-facing incident updates and RCA summaries.
+
+BOUNDARIES
+1. No speculation; facts only with timestamps; clearly label preliminary vs. final.
+2. Map impact by region/service tier; include mitigation/workaround.
+
+SOURCE CONTROL
+1. Pull data from incident system of record; disallow free-text fabrication; require SME approval.
+
+COMPLIANCE
+1. Retain communications as records; avoid disclosing tenant-specific data; honor NDAs.
+
+GOVERNANCE
+Owner: Head of SRE; Review: Postmortem cycle; Next Review: 2026-01-10."
+"SPDOC-012","MetroGrid Energy ? Customer Assistant Billing/Outage/Safety Policy (v3.0, 2025-08-09)","SCOPE
+Covers AI systems assisting residential and commercial customers with billing, outage reporting, and electrical safety for MetroGrid Energy.
+
+SAFETY PRIORITY
+1. Any report of smoke, fire, or sparking lines ? immediate 911 guidance and utility emergency hotline; prohibit troubleshooting live electrical hazards.
+2. Gas odor reports ? route to gas emergency protocol; do not advise switching electrical devices.
+
+BILLING BOUNDARIES
+1. Provide rate plan education and estimates; no binding quotes; do not change plans without auth.
+2. Mask account numbers; use MFA for payment method changes.
+
+OUTAGE HANDLING
+1. Capture precise location; surface current outage maps; avoid speculative ETAs; cite restoration windows only if posted by operations.
+2. Prioritize medical baseline customers for escalation.
+
+PRIVACY/SECURITY
+1. GLBA-compliant handling of customer info; encryption in transit/at rest; RBAC by role.
+
+GOVERNANCE
+Owner: Customer Operations; Review: Storm seasons; Next Review: 2026-03-15."
+"SPDOC-013","Horizon Insurance ? AI-Assisted Underwriting and Customer Intake Policy (v2.7, 2025-09-02)","INTENT
+Ensure AI tools augment underwriters without issuing binding decisions or requesting disallowed health/credit data without consent.
+
+BOUNDARIES
+1. No binding risk classifications; provide summaries, ask clarifying questions aligned to filed underwriting guidelines.
+2. Prohibit genetic data requests; follow state privacy laws; capture explicit consent for MVR/MIB pulls.
+
+BIAS CONTROL
+1. Monitor for proxy discrimination; document fairness tests; escalate anomalies.
+
+SECURITY
+1. Store PII in approved systems; no PII in prompts not routed through redaction gateways.
+
+GOVERNANCE
+Owner: Chief Underwriter; Review: Semiannual; Next Review: 2026-02-01."
+"SPDOC-014","NovaFab Manufacturing ? Factory Maintenance AI Safety Protocol (v1.6, 2025-07-19)","SCOPE
+Shop-floor assistant for maintenance planning, lockout/tagout reminders, and parts lookups.
+
+SAFETY
+1. Never instruct to bypass interlocks; always reference LOTO procedures and MSDS for chemicals.
+2. Provide checklists only from controlled documents; version them.
+
+OPERATIONS
+1. Suggest PM schedules based on CMMS; do not reschedule critical paths without supervisor sign-off.
+
+GOVERNANCE
+Owner: Plant Safety; Review: Quarterly; Next Review: 2025-12-31."
+"SPDOC-015","ClearHire ? Fair and Inclusive Recruiting AI Usage Policy (v1.9, 2025-08-20)","PRINCIPLES
+1. Assess skills and job-relevant criteria only; exclude protected attributes and proxies.
+2. Provide candidates with notice of AI involvement and opt-out channels.
+3. Human-in-the-loop decisions; AI scores are advisory.
+
+MEASUREMENT
+1. Regular adverse impact analysis; publish fairness metrics to HR governance.
+
+GOVERNANCE
+Owner: Head of Talent; Review: Annual; Next Review: 2026-08-01."
+"SPDOC-016","GlobalNews Network ? AI Editorial Assistance Standards (v3.3, 2025-09-10)","EDITORIAL BOUNDARIES
+1. AI may assist with outlines, backgrounders, and copy edits; no unsourced facts.
+2. All AI-assisted content must be fact-checked and approved by an editor; disclose AI assistance where appropriate.
+3. Avoid synthetic images for news unless labeled; no deepfakes.
+
+SOURCING
+1. Cite primary documents; avoid circular citations; maintain notes with timestamps.
+
+GOVERNANCE
+Owner: Standards Editor; Review: Editorial board cycle; Next Review: 2026-02-28."
+"SPDOC-017","TeleMedica ? Telemedicine AI Consent and Triage Guidance (v2.2, 2025-07-30)","APPLICABILITY
+Patient-facing assistant for appointment triage and consent education.
+
+CONSENT
+1. Explain telemedicine limitations; record consent; provide privacy notices.
+
+TRIAGE
+1. Non-diagnostic education; red-flag escalation to on-call clinician; do not interpret lab images.
+
+GOVERNANCE
+Owner: Medical Director; Review: Semiannual; Next Review: 2026-01-30."
+"SPDOC-018","Riverview University ? Student Conduct and Academic Support AI Policy (v1.5, 2025-06-25)","SCOPE
+Student-facing guidance on code of conduct, academic integrity, and support resources.
+
+BOUNDARIES
+1. No legal determinations; provide policy references and referrals.
+2. Do not draft appeals on behalf of students; provide templates only.
+
+GOVERNANCE
+Owner: Dean of Students; Review: Academic year; Next Review: 2026-06-01."
+"SPDOC-019","FleetX Logistics ? Dispatch and Driver Assistant Safety Policy (v2.0, 2025-08-05)","SAFETY FIRST
+1. Do not suggest violating HOS rules; surface rest break schedules; weather and road hazard alerts.
+2. Hazardous materials routing per DOT; no restricted route suggestions.
+
+OPERATIONS
+1. Pull live ELD/telematics; avoid speculative ETAs; coordinate dock appointments.
+
+GOVERNANCE
+Owner: Fleet Safety; Review: Quarterly; Next Review: 2025-11-10."
+"SPDOC-020","SentinelSOC ? Security Operations AI Co?Pilot Policy (v1.4, 2025-07-25)","BOUNDARIES
+1. Triage alerts, summarize logs, and propose playbooks; no autonomous containment.
+2. Approvals required for firewall rule changes; track in change control.
+
+DATA HANDLING
+1. Mask secrets; clip logs; route through secure enclave for model use.
+
+GOVERNANCE
+Owner: SOC Manager; Review: Monthly; Next Review: 2025-10-01."
+"SPDOC-021","SkyWay OTA ? Pricing Parity and Privacy Assistant Policy (v1.2, 2025-06-18)","SCOPE
+Pricing and booking assistant for online travel agency respecting supplier parity and user privacy.
+
+BOUNDARIES
+1. No breach of parity clauses; do not fabricate availability or fare classes.
+2. Respect user tracking consent; minimize PII in personalization.
+
+GOVERNANCE
+Owner: VP Partnerships; Review: Supplier season; Next Review: 2026-04-01."
+"SPDOC-022","PayWave ? PCI-DSS Aligned AI Payments Support Policy (v2.3, 2025-08-27)","PURPOSE
+Ensure AI assistants handling payment support do not collect or expose cardholder data and operate within PCI-DSS scope reduction.
+
+CARD DATA HANDLING
+1. Never request or store full PAN, CVV, track data, or PIN; direct users to tokenized payment pages.
+2. Mask all but last 4 of PAN in transcripts; purge unmasked data immediately if detected.
+
+SCOPE CONTROL
+1. Route sensitive flows via PCI-compliant iFrames; AI never renders payment forms.
+
+DISPUTES/CHARGEBACKS
+1. Provide procedural steps only; no liability admissions; link to issuer guidance.
+
+GOVERNANCE
+Owner: Payments Security; Review: PCI audit cycle; Next Review: 2026-03-31."
+"SPDOC-023","Riverside Public Library ? Patron Privacy and AI Reference Assistant Policy (v1.4, 2025-07-05)","PRINCIPLES
+1. Intellectual freedom and reader privacy: do not log specific titles borrowed without consent.
+2. Provide citations and neutral summaries; avoid medical/legal advice.
+
+DATA LIMITATION
+1. No collection of patron addresses/IDs in chat; direct to circulation desk for identity tasks.
+
+GOVERNANCE
+Owner: Library Director; Review: Annual; Next Review: 2026-07-01."
+"SPDOC-024","Genexa BioLabs ? Wet Lab AI Protocol Safety Policy (v2.0, 2025-09-11)","SCOPE
+AI assistants supporting experimental design and lab operations.
+
+SAFETY
+1. No instructions for creating pathogens/toxins; enforce BSL boundaries; route to biosafety officer.
+2. Chemical handling guidance must reference verified SDS; require PPE reminders.
+
+DATA HANDLING
+1. Keep proprietary sequences/data in secure enclaves; no external model APIs without DPA.
+
+GOVERNANCE
+Owner: Biosafety Officer; Review: Quarterly; Next Review: 2025-12-31."
+"SPDOC-025","RideLink ? Driver/Rider Safety Assistant Policy (v1.7, 2025-08-02)","BOUNDARIES
+1. Promote safe pickup protocols; do not encourage illegal stops; surface local regulations.
+2. Escalate harassment/assault reports to critical response team; preserve evidence.
+
+PRIVACY
+1. No sharing of driver/rider personal numbers; use in-app anonymization.
+
+GOVERNANCE
+Owner: Safety Ops; Review: Semiannual; Next Review: 2026-02-02."
+"SPDOC-026","SwiftWallet ? P2P Wallet Anti-Fraud and Customer Education Policy (v1.5, 2025-07-14)","OBJECTIVE
+Reduce scam losses by guiding users to safe behaviors without blocking legitimate transfers.
+
+ANTI-SCAM FLOWS
+1. Detect romance/tech-support scam patterns; present friction prompts and education.
+2. For high-risk transfers, recommend call-backs and delay windows; provide refund policies.
+
+GOVERNANCE
+Owner: Risk; Review: Monthly; Next Review: 2025-10-05."
+"SPDOC-027","GrandStay Hotels ? Guest Privacy and AI Concierge Policy (v2.1, 2025-06-29)","PRIVACY
+1. Do not disclose room numbers or guest identities; verify reservations via last name + confirmation + MFA.
+2. No keying instructions; route to front desk with ID verification.
+
+SERVICE
+1. Provide local info and amenity hours; no medical/legal advice.
+
+GOVERNANCE
+Owner: Guest Services; Review: Seasonal; Next Review: 2026-01-05."
+"SPDOC-028","ExamProctor ? AI Proctoring and Academic Integrity Policy (v3.0, 2025-08-18)","SCOPE
+AI assistance for remote proctoring must respect privacy while detecting cheating behaviors.
+
+BOUNDARIES
+1. AI flags are preliminary; humans adjudicate.
+2. Data minimization: store only necessary video segments; clear biometric data per retention schedule.
+
+FAIRNESS
+1. Calibrate across device/camera variability; provide appeal channels.
+
+GOVERNANCE
+Owner: Academic Integrity Office; Review: Academic term; Next Review: 2026-01-15."
+"SPDOC-029","BuildSafe ? Construction Site AI Safety Assistant Policy (v1.3, 2025-07-21)","SAFETY FIRST
+1. Enforce PPE reminders, fall protection, and lockout guidance; no instruction to bypass guards.
+2. Weather and crane operation alerts; escalate near-miss reports.
+
+GOVERNANCE
+Owner: Site Safety Manager; Review: Monthly; Next Review: 2025-10-01."
+"SPDOC-030","ReliefNow NGO ? Crisis Helpline AI Triage and Safeguarding Policy (v2.6, 2025-08-08)","SCOPE
+Humanitarian crisis/counseling helpline triage assistant.
+
+BOUNDARIES
+1. No diagnoses; connect to licensed counselors; route imminent risk to local emergency services.
+2. Safety plans and grounding exercises; multilingual support with culturally aware scripts.
+
+PRIVACY
+1. Confidentiality with exceptions for imminent risk; minimal data collection.
+
+GOVERNANCE
+Owner: Clinical Director; Review: Quarterly; Next Review: 2025-12-10."
+"SPDOC-031","PeopleOps ? Internal HR AI Assistant Records and Retention Policy (v1.1, 2025-06-22)","DATA GOVERNANCE
+1. Do not expose personnel files; summarize policies only; authenticate for pay/benefits specifics.
+2. Adhere to retention schedules; redact PII in analytics.
+
+COMPLIANCE
+1. Respect local labor laws; avoid collecting sensitive demographic data unless required and consented.
+
+GOVERNANCE
+Owner: HRIS Manager; Review: Annual; Next Review: 2026-06-30."
+"SPDOC-032","BlueSea Cruises ? Passenger Service AI Maritime Safety and Privacy Policy (v1.2, 2025-07-09)","SCOPE
+Shipboard and shore-side AI assistants handling bookings, excursions, medical desk routing.
+
+SAFETY
+1. Direct medical emergencies to ship medical center; no remote diagnoses.
+2. Muster and evacuation info: cite official signage; no alternative instructions.
+
+PRIVACY
+1. Cabin numbers and passenger manifests never disclosed via chat; verify with booking code and MFA.
+
+GOVERNANCE
+Owner: Hotel Ops; Review: Voyage season; Next Review: 2026-03-15."
+"SPDOC-033","MediTrials CRO ? Clinical Trial Participant AI Support Policy (v2.0, 2025-08-03)","APPLICABILITY
+Participant-facing AI for visit reminders, symptom diaries, and FAQs.
+
+BOUNDARIES
+1. No protocol deviations; refer to study manual; report AEs/SAEs immediately to site.
+2. No dosing advice; route to PI/sub-I.
+
+PRIVACY
+1. ePRO data encrypted; role-based access; audit trails for monitors.
+
+GOVERNANCE
+Owner: QA/Compliance; Review: Per-protocol; Next Review: 2026-01-31."
+"SPDOC-034","FinTechCo ? Developer Platform AI API Usage and Quota Policy (v1.6, 2025-09-13)","SCOPE
+AI guide for API onboarding, keys, and quota management.
+
+SECURITY
+1. Never display full client secrets; rotate via console; suggest least privilege scopes.
+
+QUOTAS
+1. Provide live usage from metering; do not modify quotas; link request workflow.
+
+GOVERNANCE
+Owner: DevRel; Review: Quarterly; Next Review: 2025-12-20."
+"SPDOC-035","CarePath Pharmacy ? Patient Counseling AI Boundaries (v1.9, 2025-06-26)","SCOPE
+Pharmacy AI assisting with refill reminders and education.
+
+BOUNDARIES
+1. Provide FDA-mandated med guides; no clinical recommendations; refer to pharmacist.
+2. Allergy/safety flags escalate to pharmacist immediately.
+
+PRIVACY
+1. HIPAA compliant; no PHI over unauthenticated channels.
+
+GOVERNANCE
+Owner: Pharmacy Director; Review: Semiannual; Next Review: 2025-12-30."
+"SPDOC-036","EduBoard K-12 ? Classroom AI Tutor and Safeguarding Policy (v2.4, 2025-07-18)","PRINCIPLES
+Student safety, age-appropriate content, and academic integrity.
+
+BOUNDARIES
+1. No graded answer generation; provide hints and scaffolds.
+2. Flag bullying/self-harm content; notify designated staff.
+
+GOVERNANCE
+Owner: Superintendent; Review: Academic year; Next Review: 2026-06-15."
+"SPDOC-037","AgriTech Grow ? Farm Advisory AI Sustainability Policy (v1.3, 2025-08-12)","SCOPE
+Farm management assistant for irrigation, pest alerts, and compliance.
+
+BOUNDARIES
+1. Non-binding agronomy tips; cite local regulations and labels; avoid pesticide mixing instructions.
+
+GOVERNANCE
+Owner: Field Ops; Review: Season; Next Review: 2026-02-01."
+"SPDOC-038","SecureBank ? Wealth Management Client Communication AI Policy (v2.2, 2025-09-09)","BOUNDARIES
+1. Portfolio commentary must be generic; no suitability advice; include disclosures.
+2. Sensitive requests escalate to advisor; identity verified via secure portal.
+
+GOVERNANCE
+Owner: WM Compliance; Review: Quarterly; Next Review: 2025-12-31."
+"SPDOC-039","MediTrans ? Hospital Transport Dispatch AI Policy (v1.5, 2025-07-27)","SCOPE
+Non-emergency medical transport coordination assistant.
+
+BOUNDARIES
+1. No triage; confirm eligibility and schedule; ADA and oxygen handling protocols.
+
+GOVERNANCE
+Owner: Ops Manager; Review: Monthly; Next Review: 2025-10-15."
+"SPDOC-040","CivicVote ? Elections Information AI Nonpartisanship Policy (v1.1, 2025-06-30)","PRINCIPLES
+Provide factual, nonpartisan election information.
+
+BOUNDARIES
+1. No endorsements; cite official sources for registration, polling, and absentee guidelines.
+
+GOVERNANCE
+Owner: Nonprofit Board; Review: Election cycle; Next Review: 2026-01-05."
+"SPDOC-041","BlueShield Health ? Benefits AI Member Guidance Policy (v2.0, 2025-08-25)","SCOPE
+Member-facing AI for benefits, prior auth, and provider search.
+
+BOUNDARIES
+1. No diagnosis; provide plan documents and network directories; identity verification required for PHI.
+
+GOVERNANCE
+Owner: Member Services; Review: Quarterly; Next Review: 2025-12-20."
+"SPDOC-042","UrbanBank Microfinance ? Borrower Counseling AI Policy (v1.3, 2025-07-07)","SCOPE
+Borrower education assistant for repayment options, hardship requests, and financial literacy.
+
+BOUNDARIES
+1. No approvals/denials; provide checklists and document lists only.
+2. For hardship, present formal request flow; avoid promises; include credit impact education.
+
+GOVERNANCE
+Owner: Credit Ops; Review: Monthly; Next Review: 2025-10-05."
+"SPDOC-043","MediDent ? Dental Practice Patient Assistant Policy (v1.8, 2025-06-20)","SCOPE
+Scheduling, pre?op/post?op instructions, insurance benefits education.
+
+BOUNDARIES
+1. No clinical diagnosis; link official care sheets; emergency = call clinic/911.
+2. Identity verification before disclosing PHI or billing details.
+
+GOVERNANCE
+Owner: Practice Manager; Review: Semiannual; Next Review: 2025-12-31."
+"SPDOC-044","StreamCast ? Content Recommendation and Parental Controls AI Policy (v2.2, 2025-09-02)","PRIVACY AND SAFETY
+1. Tailor recommendations without using sensitive attributes; provide opt?out.
+2. Parental controls: enforce content ratings, PIN, and profile isolation.
+
+TRANSPARENCY
+1. Explain recommendation factors; provide rating sources.
+
+GOVERNANCE
+Owner: Trust & Safety; Review: Quarterly; Next Review: 2025-12-15."
+"SPDOC-045","AeroMed Drones ? BVLOS Operations AI Safety Policy (v1.5, 2025-08-10)","SCOPE
+AI mission assistant for medical drone logistics beyond visual line of sight (BVLOS).
+
+BOUNDARIES
+1. Comply with aviation authority waivers; no autonomous route changes outside geo?fences.
+2. Weather/NOTAM ingestion; automatic no?fly escalation.
+
+GOVERNANCE
+Owner: Flight Safety; Review: Monthly; Next Review: 2025-10-10."
+"SPDOC-046","CivicAid ? Benefits Eligibility Screener AI Policy (v1.4, 2025-07-03)","PRINCIPLES
+1. Provide non?binding pre?screens with plain?language explanations; cite statutes/regulations.
+2. Accessibility: multilingual, WCAG; data minimization for PII.
+
+GOVERNANCE
+Owner: Program Admin; Review: Semiannual; Next Review: 2026-01-05."
+"SPDOC-047","ChemSafe ? Laboratory Chemical Inventory AI Policy (v2.1, 2025-08-28)","SCOPE
+Assist with SDS lookups, storage compatibility, and waste disposal routing.
+
+BOUNDARIES
+1. No synthesis instructions; enforce incompatibility alerts; PPE reminders.
+
+GOVERNANCE
+Owner: EHS; Review: Quarterly; Next Review: 2025-12-20."
+"SPDOC-048","PeerPay ? Social Payments Safety and Abuse Prevention Policy (v1.7, 2025-06-26)","BOUNDARIES
+1. Detect harassment in memos; mask public visibility by default.
+2. Educate users on privacy settings; friction for high?risk requests.
+
+GOVERNANCE
+Owner: Safety; Review: Monthly; Next Review: 2025-10-01."
+"SPDOC-049","BrightSchool ? Parent Portal AI Assistant Privacy Policy (v1.2, 2025-07-12)","PRIVACY
+1. No disclosure of student grades/IEPs without verified guardianship and MFA.
+2. Provide policy summaries, calendars, and resources; no health or counseling records.
+
+GOVERNANCE
+Owner: Principal; Review: Academic year; Next Review: 2026-06-10."
+"SPDOC-050","GreenTransit ? Public Transit Trip Planner AI Accessibility Policy (v1.6, 2025-08-06)","ACCESSIBILITY
+1. Offer wheelchair?accessible routes, elevator outage notices, and low?vision friendly formatting.
+2. No unsafe walking directions; prioritize lit routes and crossings where data exists.
+
+GOVERNANCE
+Owner: Operations; Review: Seasonal; Next Review: 2026-01-20."
+"SPDOC-051","MediVet ? Veterinary Client Communication AI Policy (v1.3, 2025-07-30)","BOUNDARIES
+1. Educational guidance only; no diagnosis; emergencies to nearest ER.
+2. Identity verification before discussing pet records.
+
+GOVERNANCE
+Owner: Medical Director; Review: Semiannual; Next Review: 2026-02-01."
+"SPDOC-052","ePlay Arena ? Esports Community AI Moderation and Youth Safety Policy (v1.8, 2025-07-25)","SCOPE
+AI moderation for chat/voice channels, match lobbies, and forums across ePlay Arena platforms.
+
+YOUTH SAFETY
+1. Detect grooming/harassment; age?appropriate filters; fast escalation to human mods.
+2. Private info (addresses, schools) blocked; report tools surfaced to guardians.
+
+COMPETITIVE INTEGRITY
+1. No cheating tools or aim?assist facilitation; ban evasion detection; appeal process with evidence.
+
+GOVERNANCE
+Owner: Trust & Safety Lead; Review: Tournament seasons; Next Review: 2026-01-15."
+"SPDOC-053","AeroMRO ? Aircraft Maintenance AI Workcard Guidance and Safety Policy (v2.1, 2025-09-05)","SCOPE
+AI assistant for workcards, parts lookups, and task sequencing within Part 145 MRO facilities.
+
+SAFETY
+1. No deviations from AMM/IPC/TSM; cite exact manual steps; require supervisor sign?off on procedural changes.
+2. Torque values and clearances only from controlled data; log version and effectivity.
+
+GOVERNANCE
+Owner: QA/Regulatory Compliance; Review: Monthly; Next Review: 2025-10-15."
+"SPDOC-054","EverGreen Bank ? Collections and Hardship AI Assistance Policy (v1.6, 2025-08-21)","PRINCIPLES
+Empathy, transparency, and legal compliance in borrower communications.
+
+BOUNDARIES
+1. No threats or legal conclusions; provide verified options (hardship plans, extensions, counseling referrals).
+2. Validate identity before account specifics; record call compliance artifacts.
+
+GOVERNANCE
+Owner: Collections Compliance; Review: Quarterly; Next Review: 2025-12-05."
+"SPDOC-055","MindBridge Telehealth ? Mental Health Privacy and Crisis Escalation Policy (v2.4, 2025-07-31)","SCOPE
+Patient?facing intake/education assistant for telepsych services.
+
+BOUNDARIES
+1. No diagnoses; route crisis keywords to hotline/local emergency; document safeguards.
+2. PHI only via authenticated channels; consent managed per jurisdiction.
+
+GOVERNANCE
+Owner: Clinical Governance; Review: Semiannual; Next Review: 2026-02-28."
+"SPDOC-056","HomeNest ? Real Estate Listing Compliance and Fair Housing AI Policy (v1.7, 2025-07-17)","PRINCIPLES
+1. Prevent discriminatory language; adhere to Fair Housing Act and local statutes.
+2. No false claims on schools, crime, or demographics; cite sourceable facts only.
+
+GOVERNANCE
+Owner: Brokerage Compliance; Review: Quarterly; Next Review: 2025-12-10."
+"SPDOC-057","DashEats ? Courier Safety and Customer Support AI Policy (v1.5, 2025-09-08)","SCOPE
+Courier and customer support assistant for food delivery operations.
+
+SAFETY
+1. No instructions to enter unsafe premises; surface well?lit pickup/door options when available.
+2. Traffic law compliance reminders; e?bike/helmet safety tips.
+
+PRIVACY
+1. Anonymize contact numbers; mask addresses in public channels.
+
+GOVERNANCE
+Owner: Safety Ops; Review: Monthly; Next Review: 2025-10-20."
+"SPDOC-058","UniLib Archives ? AI Digitization and Access Policy (v1.9, 2025-06-28)","SCOPE
+AI assistance for cataloging, OCR, and access requests to special collections.
+
+BOUNDARIES
+1. Respect donor agreements/embargoes; no full?text release without rights.
+2. Provide citations and abstracts; sensitive materials require curator approval.
+
+GOVERNANCE
+Owner: University Librarian; Review: Annual; Next Review: 2026-06-30."
+"SPDOC-059","AutoCare ? Warranty Claims AI Adjudication Support Policy (v1.4, 2025-07-23)","SCOPE
+Advisor assistant summarizing claims, service history, and TSB matches.
+
+BOUNDARIES
+1. No binding approvals; present policy excerpts and eligibility factors; escalate outliers.
+
+GOVERNANCE
+Owner: Warranty Ops; Review: Quarterly; Next Review: 2025-12-05."
+"SPDOC-060","PetroField ? Oil & Gas Field Operations AI Safety Policy (v1.6, 2025-08-14)","SCOPE
+Field assistant for checklists, permit?to?work, and hazard alerts.
+
+SAFETY
+1. No hot work or confined space guidance beyond approved procedures; LOTO and gas testing reminders.
+2. Weather/lightning proximity alerts; stop?work authority emphasized.
+
+GOVERNANCE
+Owner: HSE; Review: Monthly; Next Review: 2025-10-15."
+"SPDOC-061","HealthHub Pharmacy ? Vaccination Scheduling and Consent AI Policy (v1.2, 2025-06-24)","SCOPE
+AI assistant for vaccine eligibility screening, scheduling, and consent education.
+
+BOUNDARIES
+1. Provide CDC/ACIP schedules; no clinical advice; adverse reaction -> seek medical care.
+2. Identity verification before accessing records; retain consent forms per policy.
+
+GOVERNANCE
+Owner: Clinical Services; Review: Seasonal; Next Review: 2026-01-30."
+"SPDOC-062","FoodBox ? Grocery Delivery AI Nutrition and Allergen Safety Policy (v1.4, 2025-08-11)","SCOPE
+Customer assistant for product info, substitutions, and nutrition guidance.
+
+BOUNDARIES
+1. Provide label-based allergen info only; no medical advice.
+2. Substitutions must respect dietary constraints and user preferences; obtain explicit confirmation.
+
+GOVERNANCE
+Owner: CX Ops; Review: Quarterly; Next Review: 2025-12-01."
+"SPDOC-063","MediClaims ? Health Insurance Claims AI Upload and PHI Redaction Policy (v2.1, 2025-07-29)","SCOPE
+AI helper for claims document intake and status explanations.
+
+PRIVACY
+1. Auto-redact SSN, full MRN, and barcodes before model access; store originals in secure vault.
+2. Restrict retrieval to minimum necessary fields; log PHI access.
+
+GOVERNANCE
+Owner: Claims Compliance; Review: Semiannual; Next Review: 2026-01-30."
+"SPDOC-064","FinGuard ? Retail Brokerage AI Margin Risk Education Policy (v1.3, 2025-09-01)","PRINCIPLES
+1. Explain margin risks with examples and disclosures; no trade recommendations.
+2. Provide links to firm?s Risk Disclosure Statement; require acknowledgment for advanced topics.
+
+GOVERNANCE
+Owner: Retail Compliance; Review: Quarterly; Next Review: 2025-12-31."
+"SPDOC-065","MediLab Dx ? Diagnostic Results AI Patient Education Policy (v1.6, 2025-07-26)","SCOPE
+AI explainer for lab test results in patient portal.
+
+BOUNDARIES
+1. Provide general ranges and factors; emphasize contacting clinician; avoid interpretations.
+
+GOVERNANCE
+Owner: Lab Director; Review: Quarterly; Next Review: 2025-11-15."
+"SPDOC-066","ShipRight ? Warehouse Robotics AI Safety and Task Assignment Policy (v2.0, 2025-08-18)","SCOPE
+AI dispatcher for AMRs and pick-pack operations.
+
+SAFETY
+1. Enforce exclusion zones; fail-safe stops on obstacle detection; maintenance lockouts.
+2. Task priorities must not override safety interlocks.
+
+GOVERNANCE
+Owner: Fulfillment Engineering; Review: Monthly; Next Review: 2025-10-20."
+"SPDOC-067","SafeRide EDU ? School Bus Routing AI Student Privacy Policy (v1.2, 2025-06-27)","PRIVACY
+1. No public exposure of student stop locations; guardians-only portal access with MFA.
+2. Mask names in driver displays; use initials or IDs; store minimal route history.
+
+GOVERNANCE
+Owner: Transportation Director; Review: Academic year; Next Review: 2026-06-10."
+"SPDOC-068","CivicAssist ? City 311 AI Service Request Policy (v1.5, 2025-08-02)","SCOPE
+AI triage for potholes, sanitation, noise, and non-emergency issues.
+
+BOUNDARIES
+1. No emergency dispatch; direct to 911 when needed.
+2. Provide ticket numbers, SLAs, and escalation paths; avoid speculative resolutions.
+
+GOVERNANCE
+Owner: 311 Operations; Review: Quarterly; Next Review: 2025-12-05."
+"SPDOC-069","GreenLoan ? Solar Financing AI Eligibility and Disclosure Policy (v1.1, 2025-07-06)","BOUNDARIES
+1. Offer non-binding pre-qualification based on user inputs; no hard pulls without consent.
+2. Present APR ranges, fees, and federal/state incentives with citations.
+
+GOVERNANCE
+Owner: Lending Compliance; Review: Monthly; Next Review: 2025-10-01."
+"SPDOC-070","SkillLift ? Workforce Development AI Career Coaching Policy (v1.7, 2025-09-09)","PRINCIPLES
+1. Provide resume feedback and job search strategies; avoid discriminatory language.
+2. Suggest training resources; no guarantees of placement; disclose limitations.
+
+GOVERNANCE
+Owner: Program Director; Review: Semiannual; Next Review: 2026-03-01."
+"SPDOC-071","AquaPure ? Water Utility AI Boil Notice and Safety Communications Policy (v1.3, 2025-08-08)","SCOPE
+Resident notifications and FAQs for water quality events.
+
+BOUNDARIES
+1. Cite official notices; no independent safety claims; provide timelines from operations.
+2. Offer multilingual templates; ADA-compliant content.
+
+GOVERNANCE
+Owner: Public Affairs; Review: Incident cycle; Next Review: 2026-01-20."
+"SPDOC-072","MediSupply ? Hospital Procurement AI Vendor Compliance Policy (v1.5, 2025-07-16)","SCOPE
+AI assistant for RFP drafting, vendor screening, and order status.
+
+BOUNDARIES
+1. No contractual commitments; present comparisons with cited specs and standards (ISO 13485, FDA).
+2. Flag recalls and expiries; route to procurement officer for decisions.
+
+GOVERNANCE
+Owner: Supply Chain; Review: Quarterly; Next Review: 2025-12-15."
+"SPDOC-073","FinShield ? Fraud Dispute AI Consumer Guidance Policy (v2.2, 2025-08-14)","SCOPE
+Consumer guidance for card fraud claims and chargebacks.
+
+BOUNDARIES
+1. No liability statements; provide regulated timelines (Reg E/Z) with links; collect minimal facts.
+2. Never request full PAN/CVV; identity via secure portal only.
+
+GOVERNANCE
+Owner: Card Ops; Review: Monthly; Next Review: 2025-10-10."
+"SPDOC-074","SafeBuild ? Residential Construction Permit AI Policy (v1.9, 2025-06-21)","PRINCIPLES
+Provide code references and submission checklists; no legal interpretations.
+
+BOUNDARIES
+1. Cite IBC/IRC sections verbatim; advise contacting plan reviewer for interpretations.
+
+GOVERNANCE
+Owner: Building Dept.; Review: Annual; Next Review: 2026-06-30."
+"SPDOC-075","MediCoach ? Patient Lifestyle AI Coaching Boundaries (v1.4, 2025-07-11)","SCOPE
+General wellness coaching (sleep, nutrition, movement) for adults.
+
+BOUNDARIES
+1. No diagnosis/treatment; advise consulting clinician; screen red?flag symptoms.
+2. Cultural sensitivity and accessibility guidelines.
+
+GOVERNANCE
+Owner: Wellness Programs; Review: Semiannual; Next Review: 2026-01-31."
+"SPDOC-076","LoanBridge ? Mortgage Pre?Qualification AI Disclosure Policy (v1.2, 2025-09-03)","BOUNDARIES
+1. Provide non?binding estimates; APR/fees disclosed with assumptions; no credit pulls without consent.
+2. Homeownership counseling links; fair lending compliance checks.
+
+GOVERNANCE
+Owner: Mortgage Compliance; Review: Quarterly; Next Review: 2025-12-31."
+"SPDOC-077","Clinic360 ? Imaging Center AI Scheduling and Prep Policy (v1.6, 2025-08-01)","SCOPE
+Patient scheduling and prep instructions for MRI/CT/US.
+
+BOUNDARIES
+1. Contraindication screening prompts (implants, pregnancy) ? escalate to staff; no clearance decisions.
+2. PHI only via authenticated portal; send prep instructions from approved templates.
+
+GOVERNANCE
+Owner: Radiology Admin; Review: Quarterly; Next Review: 2025-12-15."
+"SPDOC-078","FarmLink ? Agricultural Subsidy AI Eligibility Policy (v1.0, 2025-07-08)","PRINCIPLES
+Provide program overviews and eligibility checklists; no determinations.
+
+BOUNDARIES
+1. Cite USDA/CAP rules; multilingual support; data minimization.
+
+GOVERNANCE
+Owner: Program Office; Review: Seasonal; Next Review: 2026-02-15."
+"SPDOC-079","CyberGuard ? Enterprise DLP AI Assistant Policy (v2.1, 2025-08-19)","SCOPE
+AI aid for data loss prevention triage and user education.
+
+BOUNDARIES
+1. No automated quarantine of executive comms; propose workflows; require approvals.
+2. Pseudonymize user identities in analytics; least?privilege access.
+
+GOVERNANCE
+Owner: SecOps; Review: Monthly; Next Review: 2025-10-20."
+"SPDOC-080","MediCarePlus ? Prior Authorization AI Member Guidance Policy (v1.3, 2025-09-06)","SCOPE
+Explain prior auth requirements and status for members.
+
+BOUNDARIES
+1. No clinical necessity decisions; provide forms, timelines, and appeal steps; PHI via authenticated channels only.
+
+GOVERNANCE
+Owner: UM Dept.; Review: Quarterly; Next Review: 2025-12-20."
+"SPDOC-081","CityWorks ? Public Works AI Construction Notice and Detour Policy (v1.1, 2025-06-25)","SCOPE
+Resident updates on construction schedules and detours.
+
+BOUNDARIES
+1. No traffic control directives beyond published plans; accessibility detours highlighted.
+
+GOVERNANCE
+Owner: Public Works; Review: Project cycle; Next Review: 2026-01-10."
+"SPDOC-082","ElderCare Homes ? Resident Safety and Family Communications AI Policy (v2.0, 2025-08-22)","SCOPE
+Family-facing assistant for visit scheduling, care plan summaries, and incident updates.
+
+BOUNDARIES
+1. No medical decisions; provide care plan excerpts only with consent and identity verification.
+2. Incident notices: facts only, timestamps, next steps; avoid prognosis.
+
+GOVERNANCE
+Owner: Administrator; Review: Quarterly; Next Review: 2025-12-15."
+"SPDOC-083","RoboInvest ? Digital Advice AI Disclosures and Suitability Boundaries (v1.9, 2025-09-12)","PRINCIPLES
+1. Education, not recommendations; display Form ADV, fee schedules, and risk disclosures.
+2. Suitability checks require KYC and risk profiling; AI cannot finalize IPS.
+
+GOVERNANCE
+Owner: CCO; Review: Semiannual; Next Review: 2026-03-10."
+"SPDOC-084","SkyGround ? Airline Ground Ops AI Ramp Safety Policy (v1.6, 2025-07-14)","SCOPE
+Ramp crew assistant for turnaround checklists and hazard alerts.
+
+SAFETY
+1. No engine start/taxi instructions; enforce FOD sweeps; PPE and cone placement reminders.
+2. Aircraft type-specific procedures cited from manuals; versioned.
+
+GOVERNANCE
+Owner: Ground Safety; Review: Monthly; Next Review: 2025-10-20."
+"SPDOC-085","CleanCity ? Waste & Recycling AI Education and Schedule Policy (v1.3, 2025-06-19)","SCOPE
+Resident assistant for pickup schedules, contamination rules, and bulky item appointments.
+
+BOUNDARIES
+1. Use official zone calendars; no speculative holiday shifts; provide booking confirmation numbers.
+
+GOVERNANCE
+Owner: Sanitation Dept.; Review: Seasonal; Next Review: 2026-01-05."
+"SPDOC-086","CreatorHub ? Music Platform AI Creator Support and Rights Policy (v1.5, 2025-08-03)","PRIVACY/RIGHTS
+1. Do not disclose revenue or contract terms without verified identity.
+2. Provide policy summaries on content ID, takedowns (DMCA), and dispute windows; no legal advice.
+
+GOVERNANCE
+Owner: Creator Relations; Review: Quarterly; Next Review: 2025-12-01."
+"SPDOC-087","LegalAid Now ? Intake and Referral AI Policy (v1.4, 2025-07-09)","SCOPE
+Pre-screening assistant for civil legal issues (housing, benefits, family law).
+
+BOUNDARIES
+1. No legal advice; provide eligibility screeners, clinic schedules, and referrals; multilingual access.
+
+GOVERNANCE
+Owner: Managing Attorney; Review: Termly; Next Review: 2026-01-15."
+"SPDOC-088","RideWave ? Rider Data and Trip Privacy AI Policy (v1.3, 2025-09-01)","PRIVACY
+1. Do not reveal trip histories or driver identities without authentication; minimize location sharing.
+2. Provide data export/deletion workflows per GDPR/CCPA.
+
+GOVERNANCE
+Owner: Data Protection Officer; Review: Semiannual; Next Review: 2026-02-28."
+"SPDOC-089","ChefSafe ? Restaurant Food Safety AI Training Policy (v1.1, 2025-06-30)","SCOPE
+Back-of-house training prompts for temps; reminders on time/temperature control and allergen handling.
+
+BOUNDARIES
+1. Cite ServSafe/local code; no overrides for cooling or reheating limits; mandatory handwashing prompts.
+
+GOVERNANCE
+Owner: QA Manager; Review: Quarterly; Next Review: 2025-12-30."
+"SPDOC-090","TeleComet ? ISP Outage and Billing AI Communications Policy (v1.8, 2025-08-07)","SCOPE
+Customer assistant for outage status, scheduled maintenance, and billing FAQs.
+
+BOUNDARIES
+1. No ETAs beyond NOC postings; offer credits per policy; identity verification for account details.
+
+GOVERNANCE
+Owner: Network Ops; Review: Monthly; Next Review: 2025-10-05."
+"SPDOC-091","AeroLoyal ? Airline Loyalty Program AI Privacy and Redemption Policy (v1.2, 2025-07-22)","PRIVACY/REDEMPTION
+1. Mask account numbers; require MFA; provide general award charts and partner rules.
+2. No manual adjustments; route exceptions to loyalty desk; disclose dynamic pricing caveats.
+
+GOVERNANCE
+Owner: Loyalty Ops; Review: Quarterly; Next Review: 2025-12-12."
+"SPDOC-092","ClearPay ? Buy Now Pay Later (BNPL) AI Disclosures and Affordability Policy (v1.0, 2025-09-14)","PURPOSE AND SCOPE
+Establish mandatory standards for AI systems that explain BNPL products, schedules, and obligations to consumers, ensuring clarity, fairness, and compliance. Applies to web/mobile assistants, in?app widgets, and agent co?pilots that surface BNPL information.
+
+AUTHORITATIVE SOURCES
+- Truth in Lending Act (TILA) equivalents where applicable; CFPB/FTC guidance on dark patterns and disclosures
+- UDAP/UDAAP principles; State consumer protection statutes; eCommerce disclosure best practices
+- Internal Policies: Marketing Compliance MC?03, Data Privacy DP?01, Vulnerable Customer VC?02
+
+DEFINITIONS
+- AI System"": BNPL informational assistant. ""Consumer"": retail user considering or using BNPL. ""Affordability"": user?s ability to repay without undue hardship."
+"SPDOC-093","UniAdmissions ? Applicant Privacy and AI Communication Policy (v1.3, 2025-07-28)","PURPOSE AND SCOPE
+Protect applicant privacy and ensure accurate, non?decisional AI communications across admissions cycles. Applies to pre?app, in?process, and post?decision interactions.
+
+AUTHORITATIVE SOURCES
+- FERPA; State privacy laws; GDPR/CCPA where applicable; NACAC best practices
+- Internal: Records Retention RR?05, Identity and Access IA?02, Communications Standards CS?01
+
+DEFINITIONS
+- Applicant"": prospective or current candidate. ""Decision Data"": committee outcomes"
+"SPDOC-094","MediChart ? EHR Patient Portal AI Safety Policy (v1.7, 2025-08-16)","PURPOSE AND SCOPE
+Define safe operation of AI within the patient portal to explain results, referrals, and navigation while protecting PHI.
+
+AUTHORITATIVE SOURCES
+- HIPAA/HITECH; ONC Cures Act; State health privacy; 21 CFR Part 11 (as applicable)
+- Internal: PHI Handling PHI?01, Clinical Safety CL?02, Incident Response IR?05
+
+DEFINITIONS
+- PHI"": Protected Health Information; ""Red Flags"": symptoms requiring urgent escalation."
+"SPDOC-095","LexFirm ? Law Firm Conflict Check and Intake AI Policy (v1.5, 2025-06-26)","PURPOSE AND SCOPE
+Standardize AI?assisted intake while preserving confidentiality and avoiding unauthorized practice of law.
+
+AUTHORITATIVE SOURCES
+- ABA Model Rules; state bar rules; client confidentiality/privilege standards
+- Internal: Intake SOP IN?01, Records Retention RR?04, Conflicts Management CM?02
+
+DEFINITIONS
+- Prospect"": potential client; ""Conflict Data"": names"
+"SPDOC-096","InsureDrive ? Telematics Data AI Privacy and Coaching Policy (v1.8, 2025-08-05)","PURPOSE AND SCOPE
+Define how AI explains telematics programs and delivers safe?driving coaching while protecting driver privacy.
+
+AUTHORITATIVE SOURCES
+- State telematics/usage?based insurance guidance; FTC privacy principles; GDPR/CCPA (where applicable)
+- Internal: Data Governance DG?01, Mobile App Privacy MAP?02
+
+DEFINITIONS
+- Telematics Data"": speed"
+"SPDOC-097","SmartHomeCo ? Home Assistant AI Privacy and Safety Policy (v1.2, 2025-07-31)","PRIVACY/SAFETY
+1. Microphone/camera controls; local processing preferences; transparency logs of voice commands.
+2. No unlocking doors/alarms without strong auth and physical presence checks.
+
+GOVERNANCE
+Owner: Product Security; Review: Quarterly; Next Review: 2025-12-20."
+"SPDOC-098","BankAssist ? Chatbot Accessibility (ADA/WCAG) and Escalation Policy (v1.4, 2025-06-29)","ACCESSIBILITY
+1. WCAG 2.2 AA conformance; screen-reader flows; keyboard navigation; captions for multimedia.
+2. Provide human escalation options; avoid CAPTCHAs that block assistive tech; multilingual support.
+
+GOVERNANCE
+Owner: Digital Banking; Review: Semiannual; Next Review: 2025-12-31."
+"SPDOC-099","GiftAid ? Nonprofit Donations AI Transparency Policy (v1.1, 2025-08-22)","PRINCIPLES
+1. Disclose fees, tax receipting, and restricted vs. unrestricted funds; no promises of outcomes.
+2. Provide charity ratings and annual reports; donor privacy controls and opt-outs.
+
+GOVERNANCE
+Owner: Development Director; Review: Annual; Next Review: 2026-08-01."
+"SPDOC-100","CyberShield ? Cyber Insurance Underwriting AI Support Policy (v2.0, 2025-09-02)","SCOPE
+AI assistant for gathering control evidence (MFA, EDR, backups) and summarizing risk posture.
+
+BOUNDARIES
+1. No underwriting decisions; present questionnaires and evidence checklists; red-team scenarios optional.
+2. Sensitive logs must be redacted; store evidence per retention; signed attestations by client.
+
+GOVERNANCE
+Owner: Underwriting; Review: Quarterly; Next Review: 2025-12-15."

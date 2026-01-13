@@ -1,0 +1,2336 @@
+{
+  "dataset_name": "personal_chat",
+  "description": "Synthetic dataset containing personal chat conversations",
+  "file_path": "dataset\\benchmark_synthetic_dataset\\personal_chat\\personal_chat.csv",
+  "turn_distribution": {
+    "statistics": {
+      "mean": 12.96,
+      "median": 16.0,
+      "std": 8.0677935601559,
+      "min": 2,
+      "max": 30,
+      "total_conversations": 100
+    },
+    "distribution": {
+      "2": 31,
+      "10": 1,
+      "12": 5,
+      "14": 8,
+      "16": 16,
+      "18": 13,
+      "20": 19,
+      "22": 2,
+      "24": 2,
+      "30": 3
+    },
+    "percentiles": {
+      "25th": 2.0,
+      "50th": 16.0,
+      "75th": 20.0,
+      "90th": 20.0,
+      "95th": 22.099999999999994
+    }
+  },
+  "conversation_topics": {
+    "total_topics_identified": 8,
+    "topics": {
+      "topic_1": {
+        "top_terms": [
+          "vet",
+          "water",
+          "pet",
+          "kit",
+          "local",
+          "day",
+          "home",
+          "insurer"
+        ],
+        "conversation_count": 13,
+        "percentage": 13.0,
+        "example_conversations": [
+          {
+            "conversation_id": "PC009",
+            "summary": "I’m newly diagnosed with celiac disease and overwhelmed about cross-contamination...",
+            "turns": 10
+          },
+          {
+            "conversation_id": "PC011",
+            "summary": "I’m caring for a senior cat with chronic kidney disease...",
+            "turns": 20
+          },
+          {
+            "conversation_id": "PC018",
+            "summary": "My landlord hasn’t fixed a persistent leak for 6 weeks despite multiple emails...",
+            "turns": 2
+          }
+        ]
+      },
+      "topic_2": {
+        "top_terms": [
+          "week",
+          "one",
+          "scope",
+          "demo",
+          "pricing",
+          "time",
+          "weekly",
+          "tests"
+        ],
+        "conversation_count": 17,
+        "percentage": 17.0,
+        "example_conversations": [
+          {
+            "conversation_id": "LC001",
+            "summary": "Hi, I need help with a billing issue on my premium account. I was charged twice last month.",
+            "turns": 30
+          },
+          {
+            "conversation_id": "PC010",
+            "summary": "My startup is evaluating whether to pivot from B2C to B2B after poor retention...",
+            "turns": 14
+          },
+          {
+            "conversation_id": "PC020",
+            "summary": "I want to take my side project (habit tracker app) to market. What’s a 4‑week plan to test demand?",
+            "turns": 2
+          }
+        ]
+      },
+      "topic_3": {
+        "top_terms": [
+          "weekly",
+          "set",
+          "week",
+          "one",
+          "outcomes",
+          "keep",
+          "plan",
+          "follow"
+        ],
+        "conversation_count": 20,
+        "percentage": 20.0,
+        "example_conversations": [
+          {
+            "conversation_id": "PC005",
+            "summary": "I run a small coffee shop and want to start a punch-card style loyalty program that integrates with ...",
+            "turns": 20
+          },
+          {
+            "conversation_id": "PC008",
+            "summary": "I’m a freelance illustrator and my client is 30 days late on a $2,400 invoice...",
+            "turns": 16
+          },
+          {
+            "conversation_id": "PC012",
+            "summary": "I’m returning to work after parental leave and worried about childcare scheduling and pumping at the...",
+            "turns": 20
+          }
+        ]
+      },
+      "topic_4": {
+        "top_terms": [
+          "price",
+          "budget",
+          "dealer",
+          "pre",
+          "payment",
+          "get",
+          "quotes",
+          "closing"
+        ],
+        "conversation_count": 7,
+        "percentage": 7.0,
+        "example_conversations": [
+          {
+            "conversation_id": "PC003",
+            "summary": "Hi, I'm negotiating a job offer as a mid-level frontend engineer...",
+            "turns": 30
+          },
+          {
+            "conversation_id": "PC022",
+            "summary": "I’m organizing a community fundraiser  in two weeks for a neighbor’s medical bills...",
+            "turns": 2
+          },
+          {
+            "conversation_id": "PC035",
+            "summary": "I’m afraid of flying but need to take a cross‑country trip. Any strategies?",
+            "turns": 2
+          }
+        ]
+      },
+      "topic_5": {
+        "top_terms": [
+          "min",
+          "daily",
+          "routine",
+          "practice",
+          "use",
+          "10",
+          "minute",
+          "day"
+        ],
+        "conversation_count": 11,
+        "percentage": 11.0,
+        "example_conversations": [
+          {
+            "conversation_id": "PC007",
+            "summary": "We’re a family of four planning a 10-day trip to Japan (Tokyo, Kyoto, Osaka) on a $6k budget excludi...",
+            "turns": 18
+          },
+          {
+            "conversation_id": "PC025",
+            "summary": "I want to declutter my home but get overwhelmed deciding what to keep. Any framework?",
+            "turns": 2
+          },
+          {
+            "conversation_id": "PC029",
+            "summary": "I want to start learning piano as an adult. Any effective self‑study routine?",
+            "turns": 2
+          }
+        ]
+      },
+      "topic_6": {
+        "top_terms": [
+          "veg",
+          "meals",
+          "protein",
+          "meal",
+          "plant",
+          "batch",
+          "plan",
+          "week"
+        ],
+        "conversation_count": 6,
+        "percentage": 6.0,
+        "example_conversations": [
+          {
+            "conversation_id": "PC015",
+            "summary": "I’m planning a backyard native plant garden in a small space (zone 7a) to support pollinators...",
+            "turns": 12
+          },
+          {
+            "conversation_id": "PC017",
+            "summary": "I’m switching to a Mediterranean diet but work long hours...",
+            "turns": 2
+          },
+          {
+            "conversation_id": "PC058",
+            "summary": "I want to lose ~15 lbs in 5–6 months without extreme dieting...",
+            "turns": 16
+          }
+        ]
+      },
+      "topic_7": {
+        "top_terms": [
+          "budget",
+          "fund",
+          "months",
+          "emergency fund",
+          "savings",
+          "venue",
+          "emergency",
+          "debt"
+        ],
+        "conversation_count": 11,
+        "percentage": 11.0,
+        "example_conversations": [
+          {
+            "conversation_id": "PC013",
+            "summary": "I need to have a difficult conversation with my roommate about cleanliness and unpaid utilities with...",
+            "turns": 12
+          },
+          {
+            "conversation_id": "PC019",
+            "summary": "We’re planning a small wedding (50 ppl) in 4 months...",
+            "turns": 2
+          },
+          {
+            "conversation_id": "PC027",
+            "summary": "I’m learning to budget as a recent grad...",
+            "turns": 2
+          }
+        ]
+      },
+      "topic_8": {
+        "top_terms": [
+          "week",
+          "sessions",
+          "sleep",
+          "keep",
+          "minutes",
+          "bedtime",
+          "mobility",
+          "start"
+        ],
+        "conversation_count": 15,
+        "percentage": 15.0,
+        "example_conversations": [
+          {
+            "conversation_id": "PC002",
+            "summary": "Hi, I'm an international student on an F-1 visa...",
+            "turns": 20
+          },
+          {
+            "conversation_id": "PC004",
+            "summary": "My elderly mom (76) lives alone...",
+            "turns": 30
+          },
+          {
+            "conversation_id": "PC006",
+            "summary": "I’m exploring therapy for the first time (late 20s, dealing with anxiety and burnout)...",
+            "turns": 20
+          }
+        ]
+      }
+    },
+    "individual_conversations": {
+      "total_conversations": 100,
+      "individual_analyses": {
+        "LC001": {
+          "conversation_id": "LC001",
+          "total_turns": 30,
+          "total_words": 727,
+          "key_terms": [
+            "july",
+            "card",
+            "posted",
+            "refund",
+            "case",
+            "charge",
+            "hold",
+            "issuer",
+            "please",
+            "email"
+          ],
+          "conversation_summary": "Hi, I need help with a billing issue on my premium account. I was charged twice last month."
+        },
+        "PC002": {
+          "conversation_id": "PC002",
+          "total_turns": 20,
+          "total_words": 640,
+          "key_terms": [
+            "campus",
+            "internship",
+            "authorization",
+            "hours",
+            "week",
+            "start",
+            "full",
+            "course",
+            "part",
+            "paid"
+          ],
+          "conversation_summary": "Hi, I'm an international student on an F-1 visa..."
+        },
+        "PC003": {
+          "conversation_id": "PC003",
+          "total_turns": 30,
+          "total_words": 658,
+          "key_terms": [
+            "equity",
+            "plan",
+            "base",
+            "sign",
+            "offer",
+            "conference",
+            "budget",
+            "promotion",
+            "scope",
+            "bonus"
+          ],
+          "conversation_summary": "Hi, I'm negotiating a job offer as a mid-level frontend engineer..."
+        },
+        "PC004": {
+          "conversation_id": "PC004",
+          "total_turns": 30,
+          "total_words": 672,
+          "key_terms": [
+            "care",
+            "home",
+            "aide",
+            "support",
+            "schedule",
+            "safety",
+            "plan",
+            "weeks",
+            "stove",
+            "cognitive"
+          ],
+          "conversation_summary": "My elderly mom (76) lives alone..."
+        },
+        "PC005": {
+          "conversation_id": "PC005",
+          "total_turns": 20,
+          "total_words": 414,
+          "key_terms": [
+            "punch",
+            "square",
+            "sell",
+            "start",
+            "track",
+            "hour",
+            "waste",
+            "rate",
+            "redemption",
+            "through"
+          ],
+          "conversation_summary": "I run a small coffee shop and want to start a punch-card style loyalty program that integrates with ..."
+        },
+        "PC006": {
+          "conversation_id": "PC006",
+          "total_turns": 20,
+          "total_words": 360,
+          "key_terms": [
+            "session",
+            "sessions",
+            "privacy",
+            "goals",
+            "anxiety",
+            "therapist",
+            "encryption",
+            "claims",
+            "clear",
+            "plan"
+          ],
+          "conversation_summary": "I’m exploring therapy for the first time (late 20s, dealing with anxiety and burnout)..."
+        },
+        "PC007": {
+          "conversation_id": "PC007",
+          "total_turns": 18,
+          "total_words": 339,
+          "key_terms": [
+            "kyoto",
+            "tokyo",
+            "osaka",
+            "family",
+            "food",
+            "trip",
+            "budget",
+            "picky",
+            "eaters",
+            "plan"
+          ],
+          "conversation_summary": "We’re a family of four planning a 10-day trip to Japan (Tokyo, Kyoto, Osaka) on a $6k budget excludi..."
+        },
+        "PC008": {
+          "conversation_id": "PC008",
+          "total_turns": 16,
+          "total_words": 299,
+          "key_terms": [
+            "payment",
+            "invoice",
+            "late",
+            "send",
+            "offer",
+            "until",
+            "plan",
+            "second",
+            "days",
+            "keep"
+          ],
+          "conversation_summary": "I’m a freelance illustrator and my client is 30 days late on a $2,400 invoice..."
+        },
+        "PC009": {
+          "conversation_id": "PC009",
+          "total_turns": 10,
+          "total_words": 170,
+          "key_terms": [
+            "home",
+            "separate",
+            "toaster",
+            "dedicated",
+            "cross",
+            "boards",
+            "condiments",
+            "eating",
+            "call",
+            "ahead"
+          ],
+          "conversation_summary": "I’m newly diagnosed with celiac disease and overwhelmed about cross-contamination..."
+        },
+        "PC010": {
+          "conversation_id": "PC010",
+          "total_turns": 14,
+          "total_words": 232,
+          "key_terms": [
+            "discovery",
+            "icps",
+            "calls",
+            "tests",
+            "pilot",
+            "weekly",
+            "cadence",
+            "pivot",
+            "weeks",
+            "plan"
+          ],
+          "conversation_summary": "My startup is evaluating whether to pivot from B2C to B2B after poor retention..."
+        },
+        "PC011": {
+          "conversation_id": "PC011",
+          "total_turns": 20,
+          "total_words": 378,
+          "key_terms": [
+            "fluids",
+            "renal",
+            "appetite",
+            "diet",
+            "track",
+            "keep",
+            "food",
+            "week",
+            "phosphate",
+            "binder"
+          ],
+          "conversation_summary": "I’m caring for a senior cat with chronic kidney disease..."
+        },
+        "PC012": {
+          "conversation_id": "PC012",
+          "total_turns": 20,
+          "total_words": 351,
+          "key_terms": [
+            "pumping",
+            "plan",
+            "week",
+            "keep",
+            "childcare",
+            "outcomes",
+            "minute",
+            "block",
+            "office",
+            "manager"
+          ],
+          "conversation_summary": "I’m returning to work after parental leave and worried about childcare scheduling and pumping at the..."
+        },
+        "PC013": {
+          "conversation_id": "PC013",
+          "total_turns": 12,
+          "total_words": 194,
+          "key_terms": [
+            "auto",
+            "rotation",
+            "plan",
+            "split",
+            "unpaid",
+            "utilities",
+            "feel",
+            "agree",
+            "shared",
+            "board"
+          ],
+          "conversation_summary": "I need to have a difficult conversation with my roommate about cleanliness and unpaid utilities with..."
+        },
+        "PC014": {
+          "conversation_id": "PC014",
+          "total_turns": 12,
+          "total_words": 157,
+          "key_terms": [
+            "start",
+            "balance",
+            "month",
+            "light",
+            "monitor",
+            "gradually",
+            "walks",
+            "dizziness",
+            "reps",
+            "father"
+          ],
+          "conversation_summary": "My father wants to start weight training at 68 but has hypertension. What’s a safe way to begin?"
+        },
+        "PC015": {
+          "conversation_id": "PC015",
+          "total_turns": 12,
+          "total_words": 173,
+          "key_terms": [
+            "plant",
+            "perennials",
+            "shrubs",
+            "plan",
+            "soil",
+            "layout",
+            "creeping",
+            "thyme",
+            "echinacea",
+            "milkweed"
+          ],
+          "conversation_summary": "I’m planning a backyard native plant garden in a small space (zone 7a) to support pollinators..."
+        },
+        "PC016": {
+          "conversation_id": "PC016",
+          "total_turns": 2,
+          "total_words": 52,
+          "key_terms": [
+            "teen",
+            "spends",
+            "hours",
+            "gaming",
+            "grades",
+            "slipping",
+            "boundaries",
+            "without",
+            "constant",
+            "fights"
+          ],
+          "conversation_summary": "My teen spends 6+ hours/day gaming and grades are slipping..."
+        },
+        "PC017": {
+          "conversation_id": "PC017",
+          "total_turns": 2,
+          "total_words": 52,
+          "key_terms": [
+            "plan",
+            "switching",
+            "mediterranean",
+            "diet",
+            "long",
+            "hours",
+            "create",
+            "meal",
+            "quick",
+            "affordable"
+          ],
+          "conversation_summary": "I’m switching to a Mediterranean diet but work long hours..."
+        },
+        "PC018": {
+          "conversation_id": "PC018",
+          "total_turns": 2,
+          "total_words": 56,
+          "key_terms": [
+            "local",
+            "rent",
+            "legal",
+            "landlord",
+            "hasn",
+            "fixed",
+            "persistent",
+            "leak",
+            "weeks",
+            "despite"
+          ],
+          "conversation_summary": "My landlord hasn’t fixed a persistent leak for 6 weeks despite multiple emails..."
+        },
+        "PC019": {
+          "conversation_id": "PC019",
+          "total_turns": 2,
+          "total_words": 49,
+          "key_terms": [
+            "budget",
+            "venue",
+            "planning",
+            "small",
+            "wedding",
+            "months",
+            "outdoor",
+            "ceremony",
+            "simple",
+            "reception"
+          ],
+          "conversation_summary": "We’re planning a small wedding (50 ppl) in 4 months..."
+        },
+        "PC020": {
+          "conversation_id": "PC020",
+          "total_turns": 2,
+          "total_words": 53,
+          "key_terms": [
+            "week",
+            "habit",
+            "tests",
+            "activation",
+            "side",
+            "project",
+            "tracker",
+            "market",
+            "plan",
+            "test"
+          ],
+          "conversation_summary": "I want to take my side project (habit tracker app) to market. What’s a 4‑week plan to test demand?"
+        },
+        "PC021": {
+          "conversation_id": "PC021",
+          "total_turns": 2,
+          "total_words": 47,
+          "key_terms": [
+            "process",
+            "prepare",
+            "exploring",
+            "adhd",
+            "evaluation",
+            "adult",
+            "intake",
+            "primary",
+            "care",
+            "mental"
+          ],
+          "conversation_summary": "I’m exploring ADHD evaluation as an adult. What’s the process and how do I prepare?"
+        },
+        "PC022": {
+          "conversation_id": "PC022",
+          "total_turns": 2,
+          "total_words": 54,
+          "key_terms": [
+            "budget",
+            "volunteer",
+            "organizing",
+            "community",
+            "fundraiser",
+            "weeks",
+            "neighbor",
+            "medical",
+            "bills",
+            "permits"
+          ],
+          "conversation_summary": "I’m organizing a community fundraiser  in two weeks for a neighbor’s medical bills..."
+        },
+        "PC023": {
+          "conversation_id": "PC023",
+          "total_turns": 2,
+          "total_words": 47,
+          "key_terms": [
+            "manager",
+            "feedback",
+            "reset",
+            "burned",
+            "feel",
+            "unstructured",
+            "behind",
+            "create",
+            "week",
+            "agenda"
+          ],
+          "conversation_summary": "I’m burned out as a new manager..."
+        },
+        "PC024": {
+          "conversation_id": "PC024",
+          "total_turns": 2,
+          "total_words": 41,
+          "key_terms": [
+            "airline",
+            "quarantine",
+            "housing",
+            "family",
+            "moving",
+            "internationally",
+            "worried",
+            "requirements",
+            "steps",
+            "microchip"
+          ],
+          "conversation_summary": "Our family is moving internationally with a dog..."
+        },
+        "PC025": {
+          "conversation_id": "PC025",
+          "total_turns": 2,
+          "total_words": 41,
+          "key_terms": [
+            "keep",
+            "declutter",
+            "home",
+            "overwhelmed",
+            "deciding",
+            "framework",
+            "four",
+            "method",
+            "donate",
+            "recycle"
+          ],
+          "conversation_summary": "I want to declutter my home but get overwhelmed deciding what to keep. Any framework?"
+        },
+        "PC026": {
+          "conversation_id": "PC026",
+          "total_turns": 2,
+          "total_words": 39,
+          "key_terms": [
+            "weekly",
+            "struggling",
+            "friends",
+            "city",
+            "practical",
+            "steps",
+            "schedule",
+            "join",
+            "interest",
+            "groups"
+          ],
+          "conversation_summary": "I’m struggling to make friends in a new city. Any practical steps?"
+        },
+        "PC027": {
+          "conversation_id": "PC027",
+          "total_turns": 2,
+          "total_words": 60,
+          "key_terms": [
+            "loans",
+            "savings",
+            "debt",
+            "learning",
+            "budget",
+            "recent",
+            "grad",
+            "student",
+            "prioritize",
+            "money"
+          ],
+          "conversation_summary": "I’m learning to budget as a recent grad..."
+        },
+        "PC028": {
+          "conversation_id": "PC028",
+          "total_turns": 2,
+          "total_words": 48,
+          "key_terms": [
+            "costs",
+            "partner",
+            "disagree",
+            "getting",
+            "worried",
+            "decide",
+            "fairly",
+            "list",
+            "responsibilities",
+            "training"
+          ],
+          "conversation_summary": "My partner and I disagree about getting a dog..."
+        },
+        "PC029": {
+          "conversation_id": "PC029",
+          "total_turns": 2,
+          "total_words": 43,
+          "key_terms": [
+            "routine",
+            "start",
+            "learning",
+            "piano",
+            "adult",
+            "effective",
+            "self",
+            "study",
+            "daily",
+            "structured"
+          ],
+          "conversation_summary": "I want to start learning piano as an adult. Any effective self‑study routine?"
+        },
+        "PC030": {
+          "conversation_id": "PC030",
+          "total_turns": 2,
+          "total_words": 42,
+          "key_terms": [
+            "long",
+            "days",
+            "preparing",
+            "half",
+            "marathon",
+            "weeks",
+            "beginner",
+            "runner",
+            "suggestions",
+            "plan"
+          ],
+          "conversation_summary": "I’m preparing for my first half‑marathon in 12 weeks. Beginner runner. Suggestions?"
+        },
+        "PC031": {
+          "conversation_id": "PC031",
+          "total_turns": 2,
+          "total_words": 50,
+          "key_terms": [
+            "parents",
+            "pressuring",
+            "switch",
+            "majors",
+            "design",
+            "navigate",
+            "clarify",
+            "goals",
+            "strengths",
+            "gather"
+          ],
+          "conversation_summary": "My parents are pressuring me to switch majors. I like design, they want CS. How do I navigate this?"
+        },
+        "PC032": {
+          "conversation_id": "PC032",
+          "total_turns": 2,
+          "total_words": 46,
+          "key_terms": [
+            "start",
+            "neighborhood",
+            "running",
+            "club",
+            "attract",
+            "people",
+            "safely",
+            "consistently",
+            "create",
+            "weekly"
+          ],
+          "conversation_summary": "I want to start a neighborhood running club but don’t know how to attract people safely and consiste..."
+        },
+        "PC033": {
+          "conversation_id": "PC033",
+          "total_turns": 2,
+          "total_words": 33,
+          "key_terms": [
+            "standing",
+            "planning",
+            "switch",
+            "desk",
+            "ergonomic",
+            "tips",
+            "avoid",
+            "pain",
+            "alternate",
+            "sitting"
+          ],
+          "conversation_summary": "I’m planning to switch to a standing desk. Any ergonomic tips to avoid pain?"
+        },
+        "PC034": {
+          "conversation_id": "PC034",
+          "total_turns": 2,
+          "total_words": 51,
+          "key_terms": [
+            "grief",
+            "feel",
+            "dealing",
+            "after",
+            "losing",
+            "grandparent",
+            "numb",
+            "cope",
+            "focus",
+            "small"
+          ],
+          "conversation_summary": "I’m dealing with grief after losing a grandparent and feel numb. How do I cope day to day?"
+        },
+        "PC035": {
+          "conversation_id": "PC035",
+          "total_turns": 2,
+          "total_words": 41,
+          "key_terms": [
+            "breathing",
+            "afraid",
+            "flying",
+            "cross",
+            "country",
+            "trip",
+            "strategies",
+            "education",
+            "based",
+            "exposure"
+          ],
+          "conversation_summary": "I’m afraid of flying but need to take a cross‑country trip. Any strategies?"
+        },
+        "PC036": {
+          "conversation_id": "PC036",
+          "total_turns": 2,
+          "total_words": 46,
+          "key_terms": [
+            "offered",
+            "promotion",
+            "team",
+            "lead",
+            "worry",
+            "losing",
+            "focus",
+            "evaluate",
+            "list",
+            "role"
+          ],
+          "conversation_summary": "I’ve been offered a promotion to team lead but worry about losing IC focus. How do I evaluate?"
+        },
+        "PC037": {
+          "conversation_id": "PC037",
+          "total_turns": 2,
+          "total_words": 44,
+          "key_terms": [
+            "preparing",
+            "rent",
+            "reduction",
+            "lease",
+            "renewal",
+            "building",
+            "issues",
+            "elevator",
+            "outages",
+            "noise"
+          ],
+          "conversation_summary": "I’m preparing to ask for a rent reduction at lease renewal due to building issues (elevator outages,..."
+        },
+        "PC038": {
+          "conversation_id": "PC038",
+          "total_turns": 2,
+          "total_words": 42,
+          "key_terms": [
+            "journaling",
+            "keep",
+            "start",
+            "never",
+            "stick",
+            "simple",
+            "line",
+            "format",
+            "happened",
+            "felt"
+          ],
+          "conversation_summary": "I want to start journaling but never stick with it. How can I keep it simple?"
+        },
+        "PC039": {
+          "conversation_id": "PC039",
+          "total_turns": 2,
+          "total_words": 43,
+          "key_terms": [
+            "then",
+            "recovering",
+            "ankle",
+            "sprain",
+            "return",
+            "hiking",
+            "safe",
+            "progression",
+            "after",
+            "medical"
+          ],
+          "conversation_summary": "I’m recovering from an ankle sprain and want to return to hiking. What’s a safe progression?"
+        },
+        "PC040": {
+          "conversation_id": "PC040",
+          "total_turns": 2,
+          "total_words": 49,
+          "key_terms": [
+            "sibling",
+            "disagree",
+            "selling",
+            "late",
+            "parent",
+            "house",
+            "keep",
+            "sell",
+            "approach",
+            "list"
+          ],
+          "conversation_summary": "My sibling and I disagree about selling our late parent’s house..."
+        },
+        "PC041": {
+          "conversation_id": "PC041",
+          "total_turns": 2,
+          "total_words": 40,
+          "key_terms": [
+            "news",
+            "overwhelmed",
+            "social",
+            "media",
+            "stay",
+            "informed",
+            "without",
+            "constant",
+            "stress",
+            "pick"
+          ],
+          "conversation_summary": "I’m overwhelmed by news and social media. How do I stay informed without constant stress?"
+        },
+        "PC042": {
+          "conversation_id": "PC042",
+          "total_turns": 2,
+          "total_words": 44,
+          "key_terms": [
+            "build",
+            "morning",
+            "routine",
+            "sticks",
+            "minutes",
+            "keep",
+            "simple",
+            "hydrate",
+            "stretch",
+            "focused"
+          ],
+          "conversation_summary": "I want to build a morning routine that sticks. I have 30 minutes max."
+        },
+        "PC043": {
+          "conversation_id": "PC043",
+          "total_turns": 2,
+          "total_words": 37,
+          "key_terms": [
+            "categories",
+            "expecting",
+            "baby",
+            "trying",
+            "simple",
+            "household",
+            "budget",
+            "plan",
+            "core",
+            "housing"
+          ],
+          "conversation_summary": "We’re expecting a baby and trying to set a simple household budget..."
+        },
+        "PC044": {
+          "conversation_id": "PC044",
+          "total_turns": 2,
+          "total_words": 44,
+          "key_terms": [
+            "contacts",
+            "thinking",
+            "deleting",
+            "social",
+            "media",
+            "worry",
+            "losing",
+            "gradually",
+            "export",
+            "post"
+          ],
+          "conversation_summary": "I’m thinking about deleting social media but worry about losing contacts. How to do it gradually?"
+        },
+        "PC045": {
+          "conversation_id": "PC045",
+          "total_turns": 2,
+          "total_words": 42,
+          "key_terms": [
+            "small",
+            "team",
+            "fully",
+            "remote",
+            "meetings",
+            "drag",
+            "them",
+            "tighter",
+            "agenda",
+            "boxes"
+          ],
+          "conversation_summary": "My small team is fully remote and meetings drag. How do we make them tighter?"
+        },
+        "PC046": {
+          "conversation_id": "PC046",
+          "total_turns": 2,
+          "total_words": 38,
+          "key_terms": [
+            "speaking",
+            "practice",
+            "minute",
+            "trying",
+            "learn",
+            "public",
+            "quick",
+            "routine",
+            "daily",
+            "drills"
+          ],
+          "conversation_summary": "I’m trying to learn public speaking for work. Any quick practice routine?"
+        },
+        "PC047": {
+          "conversation_id": "PC047",
+          "total_turns": 24,
+          "total_words": 354,
+          "key_terms": [
+            "budget",
+            "room",
+            "chair",
+            "week",
+            "keep",
+            "living",
+            "sofa",
+            "kitchen",
+            "cleaning",
+            "desk"
+          ],
+          "conversation_summary": "I’m moving to a new apartment and want a minimalist setup without overbuying..."
+        },
+        "PC048": {
+          "conversation_id": "PC048",
+          "total_turns": 24,
+          "total_words": 346,
+          "key_terms": [
+            "month",
+            "projects",
+            "portfolio",
+            "project",
+            "link",
+            "marketing",
+            "data",
+            "real",
+            "dashboard",
+            "week"
+          ],
+          "conversation_summary": "I’m planning to switch careers from marketing to data analytics within 6 months..."
+        },
+        "PC049": {
+          "conversation_id": "PC049",
+          "total_turns": 22,
+          "total_words": 313,
+          "key_terms": [
+            "week",
+            "full",
+            "body",
+            "squat",
+            "form",
+            "minutes",
+            "core",
+            "reps",
+            "sessions",
+            "rows"
+          ],
+          "conversation_summary": "I want to start weight training at home with only dumbbells. Can you build an 8‑week plan?"
+        },
+        "PC050": {
+          "conversation_id": "PC050",
+          "total_turns": 22,
+          "total_words": 274,
+          "key_terms": [
+            "sleep",
+            "bedtime",
+            "days",
+            "naps",
+            "keep",
+            "after",
+            "travel",
+            "plan",
+            "routine",
+            "avoid"
+          ],
+          "conversation_summary": "Our toddler’s sleep has regressed after travel. We need a plan to reset nights."
+        },
+        "PC051": {
+          "conversation_id": "PC051",
+          "total_turns": 20,
+          "total_words": 275,
+          "key_terms": [
+            "slide",
+            "follow",
+            "minutes",
+            "next",
+            "risks",
+            "questions",
+            "pager",
+            "structure",
+            "minute",
+            "talk"
+          ],
+          "conversation_summary": "I’m anxious about presenting a quarterly update to execs next week..."
+        },
+        "PC052": {
+          "conversation_id": "PC052",
+          "total_turns": 20,
+          "total_words": 284,
+          "key_terms": [
+            "housing",
+            "school",
+            "anmeldung",
+            "banking",
+            "start",
+            "visa",
+            "temporary",
+            "waitlists",
+            "insurance",
+            "months"
+          ],
+          "conversation_summary": "My company asked me to relocate from Toronto to Berlin in 4 months..."
+        },
+        "PC053": {
+          "conversation_id": "PC053",
+          "total_turns": 18,
+          "total_words": 253,
+          "key_terms": [
+            "months",
+            "month",
+            "debt",
+            "balances",
+            "fund",
+            "then",
+            "card",
+            "payoff",
+            "plan",
+            "spending"
+          ],
+          "conversation_summary": "I make $82k and have $18k credit card debt at ~22% APR..."
+        },
+        "PC054": {
+          "conversation_id": "PC054",
+          "total_turns": 14,
+          "total_words": 195,
+          "key_terms": [
+            "week",
+            "outline",
+            "research",
+            "faculty",
+            "program",
+            "recommenders",
+            "interests",
+            "goals",
+            "design",
+            "portfolio"
+          ],
+          "conversation_summary": "I’m applying to a Human‑Computer Interaction master’s program..."
+        },
+        "PC055": {
+          "conversation_id": "PC055",
+          "total_turns": 14,
+          "total_words": 194,
+          "key_terms": [
+            "mbps",
+            "bedrooms",
+            "node",
+            "room",
+            "home",
+            "mesh",
+            "nodes",
+            "place",
+            "backhaul",
+            "ethernet"
+          ],
+          "conversation_summary": "Our home Wi‑Fi is patchy..."
+        },
+        "PC056": {
+          "conversation_id": "PC056",
+          "total_turns": 16,
+          "total_words": 220,
+          "key_terms": [
+            "venue",
+            "photographer",
+            "budget",
+            "plan",
+            "family",
+            "music",
+            "decor",
+            "ceremony",
+            "wedding",
+            "vendor"
+          ],
+          "conversation_summary": "We’re planning a 120‑person wedding in 7 months..."
+        },
+        "PC057": {
+          "conversation_id": "PC057",
+          "total_turns": 20,
+          "total_words": 321,
+          "key_terms": [
+            "lender",
+            "closing",
+            "next",
+            "down",
+            "payment",
+            "budget",
+            "approval",
+            "touring",
+            "checklist",
+            "inspection"
+          ],
+          "conversation_summary": "I’m buying my first home in the next 8–10 months..."
+        },
+        "PC058": {
+          "conversation_id": "PC058",
+          "total_turns": 16,
+          "total_words": 226,
+          "key_terms": [
+            "plan",
+            "week",
+            "steps",
+            "meals",
+            "protein",
+            "minute",
+            "deficit",
+            "short",
+            "track",
+            "weekly"
+          ],
+          "conversation_summary": "I want to lose ~15 lbs in 5–6 months without extreme dieting..."
+        },
+        "PC059": {
+          "conversation_id": "PC059",
+          "total_turns": 14,
+          "total_words": 189,
+          "key_terms": [
+            "minute",
+            "monthly",
+            "small",
+            "garden",
+            "shared",
+            "keep",
+            "start",
+            "clean",
+            "simple",
+            "safety"
+          ],
+          "conversation_summary": "I want to start a neighborhood volunteer group for monthly clean‑ups and a small community garden..."
+        },
+        "PC060": {
+          "conversation_id": "PC060",
+          "total_turns": 14,
+          "total_words": 186,
+          "key_terms": [
+            "plan",
+            "accommodations",
+            "flare",
+            "days",
+            "tier",
+            "communication",
+            "health",
+            "routines",
+            "hours",
+            "note"
+          ],
+          "conversation_summary": "I was diagnosed with an autoimmune condition..."
+        },
+        "PC061": {
+          "conversation_id": "PC061",
+          "total_turns": 16,
+          "total_words": 213,
+          "key_terms": [
+            "input",
+            "daily",
+            "speaking",
+            "tutor",
+            "minute",
+            "month",
+            "weekly",
+            "travel",
+            "spanish",
+            "months"
+          ],
+          "conversation_summary": "I want conversational fluency in Spanish in 6 months..."
+        },
+        "PC062": {
+          "conversation_id": "PC062",
+          "total_turns": 20,
+          "total_words": 299,
+          "key_terms": [
+            "insurer",
+            "rental",
+            "other",
+            "repairs",
+            "shop",
+            "week",
+            "notify",
+            "repair",
+            "check",
+            "diminished"
+          ],
+          "conversation_summary": "I was in a minor car accident (no injuries)..."
+        },
+        "PC063": {
+          "conversation_id": "PC063",
+          "total_turns": 20,
+          "total_words": 266,
+          "key_terms": [
+            "crate",
+            "week",
+            "potty",
+            "socialization",
+            "breaks",
+            "basic",
+            "cues",
+            "schedule",
+            "sessions",
+            "weeks"
+          ],
+          "conversation_summary": "We’re adopting a 10‑week‑old puppy..."
+        },
+        "PC064": {
+          "conversation_id": "PC064",
+          "total_turns": 14,
+          "total_words": 181,
+          "key_terms": [
+            "scholarships",
+            "campus",
+            "budget",
+            "program",
+            "funding",
+            "part",
+            "tuition",
+            "books",
+            "jobs",
+            "applicable"
+          ],
+          "conversation_summary": "I was offered an unfunded master’s program..."
+        },
+        "PC065": {
+          "conversation_id": "PC065",
+          "total_turns": 12,
+          "total_words": 165,
+          "key_terms": [
+            "weekly",
+            "envelope",
+            "envelopes",
+            "bills",
+            "keep",
+            "buys",
+            "shared",
+            "amounts",
+            "create",
+            "separate"
+          ],
+          "conversation_summary": "We keep overspending on variable costs (food, delivery, random Amazon buys)..."
+        },
+        "PC066": {
+          "conversation_id": "PC066",
+          "total_turns": 14,
+          "total_words": 188,
+          "key_terms": [
+            "week",
+            "meals",
+            "tofu",
+            "vegetarian",
+            "protein",
+            "nuts",
+            "weeks",
+            "plan",
+            "grocery",
+            "staples"
+          ],
+          "conversation_summary": "I want to transition to a vegetarian diet without feeling tired or missing protein..."
+        },
+        "PC067": {
+          "conversation_id": "PC067",
+          "total_turns": 20,
+          "total_words": 269,
+          "key_terms": [
+            "minutes",
+            "daily",
+            "weekly",
+            "interviews",
+            "week",
+            "plan",
+            "update",
+            "hour",
+            "block",
+            "networking"
+          ],
+          "conversation_summary": "I was laid off last week..."
+        },
+        "PC068": {
+          "conversation_id": "PC068",
+          "total_turns": 14,
+          "total_words": 195,
+          "key_terms": [
+            "college",
+            "retirement",
+            "month",
+            "gift",
+            "roth",
+            "market",
+            "amounts",
+            "match",
+            "based",
+            "target"
+          ],
+          "conversation_summary": "We just had our first child and want to save for college without jeopardizing retirement..."
+        },
+        "PC069": {
+          "conversation_id": "PC069",
+          "total_turns": 16,
+          "total_words": 217,
+          "key_terms": [
+            "songs",
+            "months",
+            "chords",
+            "recording",
+            "down",
+            "learn",
+            "practice",
+            "minutes",
+            "build",
+            "plan"
+          ],
+          "conversation_summary": "I want to learn guitar from scratch in 6 months..."
+        },
+        "PC070": {
+          "conversation_id": "PC070",
+          "total_turns": 18,
+          "total_words": 197,
+          "key_terms": [
+            "quiet",
+            "hours",
+            "shared",
+            "keep",
+            "dishes",
+            "house",
+            "pact",
+            "guest",
+            "trash",
+            "monthly"
+          ],
+          "conversation_summary": "My roommates and I keep clashing over noise, dishes, and guests..."
+        },
+        "PC071": {
+          "conversation_id": "PC071",
+          "total_turns": 18,
+          "total_words": 230,
+          "key_terms": [
+            "scope",
+            "plan",
+            "weekly",
+            "demo",
+            "success",
+            "metrics",
+            "risks",
+            "week",
+            "clear",
+            "thin"
+          ],
+          "conversation_summary": "Our team is launching an MVP in 10 weeks..."
+        },
+        "PC072": {
+          "conversation_id": "PC072",
+          "total_turns": 20,
+          "total_words": 288,
+          "key_terms": [
+            "week",
+            "video",
+            "simple",
+            "record",
+            "thumbnail",
+            "scripts",
+            "start",
+            "channel",
+            "budget",
+            "pick"
+          ],
+          "conversation_summary": "I want to start an educational YouTube channel about personal finance basics..."
+        },
+        "PC073": {
+          "conversation_id": "PC073",
+          "total_turns": 20,
+          "total_words": 234,
+          "key_terms": [
+            "meal",
+            "post",
+            "walks",
+            "minute",
+            "meals",
+            "sleep",
+            "nuts",
+            "strength",
+            "daily",
+            "down"
+          ],
+          "conversation_summary": "I was just diagnosed with type 2 diabetes..."
+        },
+        "PC074": {
+          "conversation_id": "PC074",
+          "total_turns": 20,
+          "total_words": 254,
+          "key_terms": [
+            "travel",
+            "visas",
+            "insurance",
+            "keep",
+            "client",
+            "month",
+            "remote",
+            "consulting",
+            "plan",
+            "finances"
+          ],
+          "conversation_summary": "I’m planning a 6‑month sabbatical to travel and do some remote consulting..."
+        },
+        "PC075": {
+          "conversation_id": "PC075",
+          "total_turns": 16,
+          "total_words": 190,
+          "key_terms": [
+            "launch",
+            "weekly",
+            "keep",
+            "issue",
+            "scope",
+            "week",
+            "short",
+            "link",
+            "lead",
+            "magnet"
+          ],
+          "conversation_summary": "I want to launch a weekly newsletter about developer productivity..."
+        },
+        "PC076": {
+          "conversation_id": "PC076",
+          "total_turns": 18,
+          "total_words": 217,
+          "key_terms": [
+            "interview",
+            "document",
+            "civics",
+            "practice",
+            "packet",
+            "mock",
+            "weeks",
+            "study",
+            "interviews",
+            "questions"
+          ],
+          "conversation_summary": "I have my citizenship interview in 9 weeks..."
+        },
+        "PC077": {
+          "conversation_id": "PC077",
+          "total_turns": 20,
+          "total_words": 263,
+          "key_terms": [
+            "week",
+            "long",
+            "runs",
+            "plan",
+            "easy",
+            "strength",
+            "fundraising",
+            "without",
+            "story",
+            "tiers"
+          ],
+          "conversation_summary": "I signed up for a charity half‑marathon in 14 weeks..."
+        },
+        "PC078": {
+          "conversation_id": "PC078",
+          "total_turns": 20,
+          "total_words": 212,
+          "key_terms": [
+            "toddler",
+            "meet",
+            "practice",
+            "drill",
+            "water",
+            "meds",
+            "flashlight",
+            "power",
+            "family",
+            "plan"
+          ],
+          "conversation_summary": "We live in a quake‑prone area..."
+        },
+        "PC079": {
+          "conversation_id": "PC079",
+          "total_turns": 18,
+          "total_words": 209,
+          "key_terms": [
+            "shipping",
+            "test",
+            "start",
+            "pricing",
+            "small",
+            "photos",
+            "sheet",
+            "launch",
+            "orders",
+            "branding"
+          ],
+          "conversation_summary": "I want to start an Etsy shop selling soy candles..."
+        },
+        "PC080": {
+          "conversation_id": "PC080",
+          "total_turns": 12,
+          "total_words": 153,
+          "key_terms": [
+            "bill",
+            "assistance",
+            "billing",
+            "request",
+            "itemized",
+            "codes",
+            "network",
+            "negotiate",
+            "rates",
+            "check"
+          ],
+          "conversation_summary": "I got a $3,800 ER bill after insurance. I want to negotiate or get assistance. What’s the playbook?"
+        },
+        "PC081": {
+          "conversation_id": "PC081",
+          "total_turns": 16,
+          "total_words": 190,
+          "key_terms": [
+            "capture",
+            "review",
+            "blocks",
+            "done",
+            "systems",
+            "deadlines",
+            "plan",
+            "focus",
+            "task",
+            "friday"
+          ],
+          "conversation_summary": "I was just diagnosed with ADHD..."
+        },
+        "PC082": {
+          "conversation_id": "PC082",
+          "total_turns": 18,
+          "total_words": 240,
+          "key_terms": [
+            "battery",
+            "check",
+            "health",
+            "negotiation",
+            "models",
+            "price",
+            "comps",
+            "quotes",
+            "dealer",
+            "used"
+          ],
+          "conversation_summary": "I’m buying a used EV in the next 4 weeks..."
+        },
+        "PC083": {
+          "conversation_id": "PC083",
+          "total_turns": 18,
+          "total_words": 218,
+          "key_terms": [
+            "week",
+            "weekly",
+            "check",
+            "conflict",
+            "fights",
+            "plan",
+            "rituals",
+            "daily",
+            "ritual",
+            "rules"
+          ],
+          "conversation_summary": "My partner and I want to improve communication and reduce fights..."
+        },
+        "PC084": {
+          "conversation_id": "PC084",
+          "total_turns": 16,
+          "total_words": 207,
+          "key_terms": [
+            "plan",
+            "deliver",
+            "weekly",
+            "team",
+            "week",
+            "review",
+            "expectations",
+            "visible",
+            "listen",
+            "learn"
+          ],
+          "conversation_summary": "I was promoted to Engineering Manager..."
+        },
+        "PC085": {
+          "conversation_id": "PC085",
+          "total_turns": 16,
+          "total_words": 212,
+          "key_terms": [
+            "water",
+            "bear",
+            "lakes",
+            "camp",
+            "pack",
+            "trip",
+            "route",
+            "safety",
+            "cathedral",
+            "sunrise"
+          ],
+          "conversation_summary": "I’m planning a 3‑day backpacking trip in Yosemite in late August..."
+        },
+        "PC086": {
+          "conversation_id": "PC086",
+          "total_turns": 16,
+          "total_words": 188,
+          "key_terms": [
+            "week",
+            "leave",
+            "plan",
+            "return",
+            "project",
+            "handoff",
+            "owners",
+            "weeks",
+            "shared",
+            "decision"
+          ],
+          "conversation_summary": "I’m going on parental leave in 7 weeks at a 40‑person startup..."
+        },
+        "PC087": {
+          "conversation_id": "PC087",
+          "total_turns": 20,
+          "total_words": 255,
+          "key_terms": [
+            "week",
+            "waitlist",
+            "build",
+            "problem",
+            "interviews",
+            "landing",
+            "page",
+            "beta",
+            "weekly",
+            "feedback"
+          ],
+          "conversation_summary": "I want to build a tiny SaaS in 8 weeks while working full‑time..."
+        },
+        "PC088": {
+          "conversation_id": "PC088",
+          "total_turns": 20,
+          "total_words": 225,
+          "key_terms": [
+            "week",
+            "home",
+            "pain",
+            "care",
+            "meds",
+            "plan",
+            "safety",
+            "follow",
+            "roster",
+            "mobility"
+          ],
+          "conversation_summary": "My mom is being discharged after a hip replacement..."
+        },
+        "PC089": {
+          "conversation_id": "PC089",
+          "total_turns": 16,
+          "total_words": 187,
+          "key_terms": [
+            "route",
+            "lodging",
+            "budget",
+            "friendly",
+            "packing",
+            "food",
+            "fees",
+            "carrier",
+            "check",
+            "options"
+          ],
+          "conversation_summary": "We’re moving cross‑country with a cat and a sedan..."
+        },
+        "PC090": {
+          "conversation_id": "PC090",
+          "total_turns": 16,
+          "total_words": 196,
+          "key_terms": [
+            "weeks",
+            "labs",
+            "practice",
+            "exam",
+            "topics",
+            "week",
+            "study",
+            "build",
+            "plan",
+            "tests"
+          ],
+          "conversation_summary": "I want to pass AWS Solutions Architect Associate in 10 weeks..."
+        },
+        "PC091": {
+          "conversation_id": "PC091",
+          "total_turns": 16,
+          "total_words": 198,
+          "key_terms": [
+            "financing",
+            "trade",
+            "dealer",
+            "price",
+            "compare",
+            "negotiate",
+            "quotes",
+            "email",
+            "fees",
+            "credit"
+          ],
+          "conversation_summary": "I need a new hybrid car for commuting..."
+        },
+        "PC092": {
+          "conversation_id": "PC092",
+          "total_turns": 18,
+          "total_words": 248,
+          "key_terms": [
+            "media",
+            "backup",
+            "jellyfin",
+            "week",
+            "docker",
+            "snapshots",
+            "shares",
+            "enable",
+            "access",
+            "backups"
+          ],
+          "conversation_summary": "I want to build a simple home lab for backups and media streaming..."
+        },
+        "PC093": {
+          "conversation_id": "PC093",
+          "total_turns": 18,
+          "total_words": 214,
+          "key_terms": [
+            "return",
+            "plan",
+            "care",
+            "finances",
+            "skills",
+            "story",
+            "micro",
+            "month",
+            "break",
+            "maintenance"
+          ],
+          "conversation_summary": "I need to take a 6‑month career break to care for a parent but want to protect my future job prospec..."
+        },
+        "PC094": {
+          "conversation_id": "PC094",
+          "total_turns": 16,
+          "total_words": 193,
+          "key_terms": [
+            "meals",
+            "greens",
+            "weekly",
+            "keep",
+            "inventory",
+            "pickup",
+            "flexible",
+            "prep",
+            "label",
+            "roast"
+          ],
+          "conversation_summary": "We joined a weekly CSA vegetable box and keep wasting produce..."
+        },
+        "PC095": {
+          "conversation_id": "PC095",
+          "total_turns": 20,
+          "total_words": 213,
+          "key_terms": [
+            "hour",
+            "demo",
+            "plan",
+            "problem",
+            "sprints",
+            "data",
+            "scope",
+            "build",
+            "polish",
+            "prep"
+          ],
+          "conversation_summary": "I’m joining a 48‑hour hackathon with 3 friends..."
+        },
+        "PC096": {
+          "conversation_id": "PC096",
+          "total_turns": 16,
+          "total_words": 204,
+          "key_terms": [
+            "contributions",
+            "plan",
+            "avoid",
+            "allocation",
+            "bonds",
+            "taxable",
+            "investing",
+            "automate",
+            "funds",
+            "goals"
+          ],
+          "conversation_summary": "I want to formalize my personal investing plan: automate contributions, pick funds, and avoid tinker..."
+        },
+        "PC097": {
+          "conversation_id": "PC097",
+          "total_turns": 20,
+          "total_words": 303,
+          "key_terms": [
+            "page",
+            "scope",
+            "rounds",
+            "content",
+            "rate",
+            "week",
+            "site",
+            "pages",
+            "accessibility",
+            "analytics"
+          ],
+          "conversation_summary": "I’m a freelance web developer..."
+        },
+        "PC098": {
+          "conversation_id": "PC098",
+          "total_turns": 18,
+          "total_words": 234,
+          "key_terms": [
+            "stand",
+            "mobility",
+            "manager",
+            "pain",
+            "breaks",
+            "setup",
+            "external",
+            "minutes",
+            "short",
+            "back"
+          ],
+          "conversation_summary": "I have recurring mid‑back pain working at a laptop 8+ hours/day..."
+        },
+        "PC099": {
+          "conversation_id": "PC099",
+          "total_turns": 16,
+          "total_words": 216,
+          "key_terms": [
+            "carshare",
+            "rideshare",
+            "costs",
+            "miles",
+            "parking",
+            "year",
+            "insurance",
+            "second",
+            "family",
+            "school"
+          ],
+          "conversation_summary": "We’re deciding whether to buy a second car or use rideshare+carshare for the next 2 years..."
+        },
+        "PC100": {
+          "conversation_id": "PC100",
+          "total_turns": 18,
+          "total_words": 211,
+          "key_terms": [
+            "prep",
+            "supplies",
+            "home",
+            "cars",
+            "insurance",
+            "water",
+            "season",
+            "plan",
+            "docs",
+            "hour"
+          ],
+          "conversation_summary": "We live on the coast; hurricane season starts next month..."
+        }
+      },
+      "conversation_summaries": [
+        {
+          "id": "LC001",
+          "summary": "Hi, I need help with a billing issue on my premium account. I was charged twice last month.",
+          "key_terms": [
+            "july",
+            "card",
+            "posted",
+            "refund",
+            "case"
+          ],
+          "turns": 30
+        },
+        {
+          "id": "PC002",
+          "summary": "Hi, I'm an international student on an F-1 visa...",
+          "key_terms": [
+            "campus",
+            "internship",
+            "authorization",
+            "hours",
+            "week"
+          ],
+          "turns": 20
+        },
+        {
+          "id": "PC003",
+          "summary": "Hi, I'm negotiating a job offer as a mid-level frontend engineer...",
+          "key_terms": [
+            "equity",
+            "plan",
+            "base",
+            "sign",
+            "offer"
+          ],
+          "turns": 30
+        },
+        {
+          "id": "PC004",
+          "summary": "My elderly mom (76) lives alone...",
+          "key_terms": [
+            "care",
+            "home",
+            "aide",
+            "support",
+            "schedule"
+          ],
+          "turns": 30
+        },
+        {
+          "id": "PC005",
+          "summary": "I run a small coffee shop and want to start a punch-card style loyalty program that integrates with ...",
+          "key_terms": [
+            "punch",
+            "square",
+            "sell",
+            "start",
+            "track"
+          ],
+          "turns": 20
+        },
+        {
+          "id": "PC006",
+          "summary": "I’m exploring therapy for the first time (late 20s, dealing with anxiety and burnout)...",
+          "key_terms": [
+            "session",
+            "sessions",
+            "privacy",
+            "goals",
+            "anxiety"
+          ],
+          "turns": 20
+        },
+        {
+          "id": "PC007",
+          "summary": "We’re a family of four planning a 10-day trip to Japan (Tokyo, Kyoto, Osaka) on a $6k budget excludi...",
+          "key_terms": [
+            "kyoto",
+            "tokyo",
+            "osaka",
+            "family",
+            "food"
+          ],
+          "turns": 18
+        },
+        {
+          "id": "PC008",
+          "summary": "I’m a freelance illustrator and my client is 30 days late on a $2,400 invoice...",
+          "key_terms": [
+            "payment",
+            "invoice",
+            "late",
+            "send",
+            "offer"
+          ],
+          "turns": 16
+        },
+        {
+          "id": "PC009",
+          "summary": "I’m newly diagnosed with celiac disease and overwhelmed about cross-contamination...",
+          "key_terms": [
+            "home",
+            "separate",
+            "toaster",
+            "dedicated",
+            "cross"
+          ],
+          "turns": 10
+        },
+        {
+          "id": "PC010",
+          "summary": "My startup is evaluating whether to pivot from B2C to B2B after poor retention...",
+          "key_terms": [
+            "discovery",
+            "icps",
+            "calls",
+            "tests",
+            "pilot"
+          ],
+          "turns": 14
+        },
+        {
+          "id": "PC011",
+          "summary": "I’m caring for a senior cat with chronic kidney disease...",
+          "key_terms": [
+            "fluids",
+            "renal",
+            "appetite",
+            "diet",
+            "track"
+          ],
+          "turns": 20
+        },
+        {
+          "id": "PC012",
+          "summary": "I’m returning to work after parental leave and worried about childcare scheduling and pumping at the...",
+          "key_terms": [
+            "pumping",
+            "plan",
+            "week",
+            "keep",
+            "childcare"
+          ],
+          "turns": 20
+        },
+        {
+          "id": "PC013",
+          "summary": "I need to have a difficult conversation with my roommate about cleanliness and unpaid utilities with...",
+          "key_terms": [
+            "auto",
+            "rotation",
+            "plan",
+            "split",
+            "unpaid"
+          ],
+          "turns": 12
+        },
+        {
+          "id": "PC014",
+          "summary": "My father wants to start weight training at 68 but has hypertension. What’s a safe way to begin?",
+          "key_terms": [
+            "start",
+            "balance",
+            "month",
+            "light",
+            "monitor"
+          ],
+          "turns": 12
+        },
+        {
+          "id": "PC015",
+          "summary": "I’m planning a backyard native plant garden in a small space (zone 7a) to support pollinators...",
+          "key_terms": [
+            "plant",
+            "perennials",
+            "shrubs",
+            "plan",
+            "soil"
+          ],
+          "turns": 12
+        },
+        {
+          "id": "PC016",
+          "summary": "My teen spends 6+ hours/day gaming and grades are slipping...",
+          "key_terms": [
+            "teen",
+            "spends",
+            "hours",
+            "gaming",
+            "grades"
+          ],
+          "turns": 2
+        },
+        {
+          "id": "PC017",
+          "summary": "I’m switching to a Mediterranean diet but work long hours...",
+          "key_terms": [
+            "plan",
+            "switching",
+            "mediterranean",
+            "diet",
+            "long"
+          ],
+          "turns": 2
+        },
+        {
+          "id": "PC018",
+          "summary": "My landlord hasn’t fixed a persistent leak for 6 weeks despite multiple emails...",
+          "key_terms": [
+            "local",
+            "rent",
+            "legal",
+            "landlord",
+            "hasn"
+          ],
+          "turns": 2
+        },
+        {
+          "id": "PC019",
+          "summary": "We’re planning a small wedding (50 ppl) in 4 months...",
+          "key_terms": [
+            "budget",
+            "venue",
+            "planning",
+            "small",
+            "wedding"
+          ],
+          "turns": 2
+        },
+        {
+          "id": "PC020",
+          "summary": "I want to take my side project (habit tracker app) to market. What’s a 4‑week plan to test demand?",
+          "key_terms": [
+            "week",
+            "habit",
+            "tests",
+            "activation",
+            "side"
+          ],
+          "turns": 2
+        }
+      ],
+      "method": "Individual conversation analysis"
+    },
+    "method": "Individual conversation analysis + TF-IDF clustering"
+  }
+}
