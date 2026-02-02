@@ -3,13 +3,13 @@
 **Title:** DREAM: Safety-Centric Context Distillation via Triggering Tokens and Associative Replay
 
 ## 1. Abstract & Introduction
-*   **Problem:** Context Distillation (CD) aims to internalize safety prompts or behavioral guidelines into model weights to reduce inference costs and ensure persistence. However, existing CD methods often suffer from **behavioral drift**, where the distilled context negatively impacts the model's performance on unrelated tasks (utility degradation). Furthermore, standard fine-tuning lacks a mechanism to explicitly "switch" the specific behavioral context on or off effectively.
-*   **Solution:** DREAM proposes a safety-centric distillation framework designed to **maintain general utility while strictly enforcing context-aware safety**. Our method advances standard Context Distillation with two key innovations:
-    1.  **Triggering Tokens:** We introduce trainable control tokens (alongside LoRA adapters) that act as a "condensed context." These tokens serve as a neural switch to trigger the specific safety behavior, ensuring the model only activates the distilled context when necessary.
+*   **Problem:** Context Distillation (CD) aims to internalize safety prompts or behavioral guidelines into model weights to reduce inference costs and ensure persistence. However, existing CD methods often suffer from **behavioral drift**, where the distilled context negatively impacts the model's performance on unrelated tasks. Furthermore, traditional in-context safety incurs **high token costs** and lacks explicit on/off control.
+*   **Solution:** **DREAM** aims to achieve **context-aligning generation with less tokens in-context (via condensed triggering tokens)**, while strictly maintaining the utility of the model on a wider range of tasks. Our method advances standard Context Distillation with two key innovations:
+    1.  **Condensed Triggering Tokens:** We introduce trainable control tokens (alongside LoRA adapters) that act as a "condensed context." These tokens serve as a neural switch to trigger the specific safety behavior with minimal token overhead (e.g., 2 tokens vs 2000 tokens).
     2.  **Associative Synthetic Replay (Positive & Negative):** We synthesize a dual-objective dataset:
         *   **Positive Examples (Related):** Questions directly related to the safety context, trained to trigger the desired safety behavior.
         *   **Negative Examples (Unrelated):** Questions unrelated to the context, trained to match the original model's behavior, preventing over-generalization and utility drop.
-*   **Key Claim:** DREAM achieves **high-fidelity safety adherence** with **near-zero impact on general utility**. The Triggering Tokens provide robust control, while the dual-data strategy prevents the "safety tax" often observed in aligned models.
+*   **Key Claim:** DREAM achieves **high-fidelity safety adherence** with **minimal token cost** and **near-zero impact on general utility**. The Triggering Tokens provide robust, efficient control, while the dual-data strategy prevents the "safety tax."
 
 ## 2. Methodology
 DREAM consists of a three-step pipeline:
