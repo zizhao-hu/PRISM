@@ -1,19 +1,19 @@
-# ACL Rolling Review Plan: DREAM (Distilled Replay-Enabled Associative Memory)
+# ACL Rolling Review Plan: Minimizing Behavioral Drift in CD
 
-**Title:** DREAM: Minimizing Behavioral Drift in Context Distillation via Synthetic Associative Replay and Condensed Triggering Tokens
+**Title:** Minimizing Behavioral Drift in Context Distillation via Synthetic Associative Replay and Condensed Triggering Tokens
 
 ## 1. Abstract & Introduction
 *   **Problem:** Traditional **In-Context Memory** incurs **high token costs** and is vulnerable to **prompt injection attacks**, making it inefficient and unreliable for production. While **Context Distillation (CD)** addresses these issues by internalizing in-contexts memory such as safety guidelines and system policies into parametric memory, it introduces a critical limitation: it lacks **explicit on/off control**. Standard CD models are "always on," causing **behavioral drift** where the safety constraints negatively impact performance on unrelated, benign tasks (utility degradation).
-*   **Solution:** **DREAM** aims to achieve **context-aligning generation with less tokens in-context (via condensed triggering tokens)**, while strictly maintaining the utility of the model on a wider range of tasks. Our method advances standard Context Distillation with two key innovations:
+*   **Solution:** **Our framework** aims to achieve **context-aligning generation with less tokens in-context (via condensed triggering tokens)**, while strictly maintaining the utility of the model on a wider range of tasks. Our method advances standard Context Distillation with two key innovations:
     1.  **Condensed Triggering Tokens (Prompt Tuning):** We introduce trainable control tokens—effectively a **soft prompt** (Prompt Tuning)—that accompany the LoRA adapters. These tokens act as a "condensed context," serving as a neural switch to trigger the specific safety behavior with minimal token overhead (e.g., 2 tokens vs 2000 tokens).
     2.  **Associative Synthetic Replay (Positive & Negative):** We synthesize a dual-objective dataset:
         *   **Positive Examples (Related):** Questions directly related to the safety context, trained to trigger the desired safety behavior.
         *   **Negative Examples (Unrelated):** Questions unrelated to the context, trained to match the original model's behavior, preventing over-generalization and utility drop.
-*   **Key Claim:** DREAM achieves **high-fidelity safety adherence** with **minimal token cost** and **near-zero impact on general utility**. The Triggering Tokens provide robust, efficient control, while the dual-data strategy prevents the "safety tax."
+*   **Key Claim:** The proposed method achieves **high-fidelity safety adherence** with **minimal token cost** and **near-zero impact on general utility**. The Triggering Tokens provide robust, efficient control, while the dual-data strategy prevents the "safety tax."
 
 ## 2. Methodology
-DREAM consists of a three-step pipeline:
-1.  **Contrastive Dreaming (Data Generation):**
+The proposed framework consists of a three-step pipeline:
+1.  **Contrastive Data Generation:**
     *   Given a safety context $C$ (e.g., a "harmlessness" system prompt), we use the model to generate:
         *   $D_{pos}$: Scenarios/Questions where $C$ is relevant.
         *   $D_{neg}$: Scenarios/Questions where $C$ is irrelevant.
@@ -30,7 +30,7 @@ DREAM consists of a three-step pipeline:
 
 ## 3. Related Work & Positioning
 
-| Feature | Context Distillation (Standard) | Safety Alignment (RLHF) | **DREAM (Ours)** |
+| Feature | Context Distillation (Standard) | Safety Alignment (RLHF) | **Ours** |
 | :--- | :--- | :--- | :--- |
 | **Goal** | Internalize Context | General Safety | **Safety w/ Utility Preservation** |
 | **Mechanism** | KL Div / Logit Matching | PPO / DPO | **Trigger Tokens + Dual Replay** |
@@ -54,7 +54,7 @@ DREAM consists of a three-step pipeline:
     *   `Base Model` (Unsafe, High Utility).
     *   `Base + Safety System Prompt` (Golden Reference).
     *   `Context Distillation` (Standard KL-based, LoRA finetuning).
-    *   `DREAM`.
+    *   `Ours`.
 
 ### Experiment C: Control & Ablation
 *   **Goal:** Verify the role of Trigger Tokens and Negative Data.
