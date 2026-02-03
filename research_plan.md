@@ -1,11 +1,11 @@
 # ACL Rolling Review Plan: DREAM (Distilled Replay-Enabled Associative Memory)
 
-**Title:** DREAM: Safety-Centric Context Distillation via Triggering Tokens and Associative Replay
+**Title:** DREAM: Minimizing Emergent Misalignment and Behavioral Drift in Context Distillation via Triggering Tokens
 
 ## 1. Abstract & Introduction
-*   **Problem:** Context Distillation (CD) aims to internalize safety prompts or behavioral guidelines into model weights to reduce inference costs and ensure persistence. However, existing CD methods often suffer from **behavioral drift**, where the distilled context negatively impacts the model's performance on unrelated tasks. Furthermore, traditional in-context safety incurs **high token costs** and lacks explicit on/off control.
+*   **Problem:** Traditional **In-Context Learning** incurs **high token costs** and is vulnerable to **prompt injection attacks**, making it inefficient and unreliable for production. While **Context Distillation (CD)** addresses these issues by internalizing contexts such as safety guidelines and system policies into model weights, it introduces a critical limitation: it lacks **explicit on/off control**. Standard CD models are "always on," causing **behavioral drift** where the safety constraints negatively impact performance on unrelated, benign tasks (utility degradation).
 *   **Solution:** **DREAM** aims to achieve **context-aligning generation with less tokens in-context (via condensed triggering tokens)**, while strictly maintaining the utility of the model on a wider range of tasks. Our method advances standard Context Distillation with two key innovations:
-    1.  **Condensed Triggering Tokens:** We introduce trainable control tokens (alongside LoRA adapters) that act as a "condensed context." These tokens serve as a neural switch to trigger the specific safety behavior with minimal token overhead (e.g., 2 tokens vs 2000 tokens).
+    1.  **Condensed Triggering Tokens (Prompt Tuning):** We introduce trainable control tokens—effectively a **soft prompt** (Prompt Tuning)—that accompany the LoRA adapters. These tokens act as a "condensed context," serving as a neural switch to trigger the specific safety behavior with minimal token overhead (e.g., 2 tokens vs 2000 tokens).
     2.  **Associative Synthetic Replay (Positive & Negative):** We synthesize a dual-objective dataset:
         *   **Positive Examples (Related):** Questions directly related to the safety context, trained to trigger the desired safety behavior.
         *   **Negative Examples (Unrelated):** Questions unrelated to the context, trained to match the original model's behavior, preventing over-generalization and utility drop.
