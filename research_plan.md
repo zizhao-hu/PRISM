@@ -1,6 +1,6 @@
 # ACL Rolling Review Plan: DREAM (Distilled Replay-Enabled Associative Memory)
 
-**Title:** DREAM: Minimizing Emergent Misalignment and Behavioral Drift in Context Distillation via Triggering Tokens
+**Title:** DREAM: Minimizing Behavioral Drift in Context Distillation via Synthetic Associative Replay and Condensed Triggering Tokens
 
 ## 1. Abstract & Introduction
 *   **Problem:** Traditional **In-Context Memory** incurs **high token costs** and is vulnerable to **prompt injection attacks**, making it inefficient and unreliable for production. While **Context Distillation (CD)** addresses these issues by internalizing in-contexts memory such as safety guidelines and system policies into parametric memory, it introduces a critical limitation: it lacks **explicit on/off control**. Standard CD models are "always on," causing **behavioral drift** where the safety constraints negatively impact performance on unrelated, benign tasks (utility degradation).
