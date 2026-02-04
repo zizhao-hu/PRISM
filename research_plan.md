@@ -30,13 +30,14 @@ The proposed framework consists of a three-step pipeline:
 
 ## 3. Related Work & Positioning
 
-| Feature | In-Context Safety | Prompt Tuning | Context Compression (ICAE) | Context Distillation | **Ours** |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Goal** | Safe Generation | Task Adaptation | Context Compression | Internalize Context | **Safety w/ Utility** |
-| **Mechanism** | System Prompt | Soft Prompts | Memory Tokens | KL / Logit Matching | **Prompt Tuning + Replay** |
-| **Control** | Yes (Prompt) | Yes (Switch) | Yes (Tokens) | Implicit (Always on) | **Explicit (Switch)** |
-| **Drift Risk** | Vulnerable (Injection) | High (Task specific) | High (Lossy) | High (Overbound) | **Minimal (Drift Proof)** |
-| **Inference Cost** | High (Input Tokens) | Low (Prefix) | Medium (Memory) | Zero (Weights) | **Low (Prefix)** |
+| Feature | Prompt Tuning | Context Distillation | Context Compression (ICAE) | Ours |
+| :--- | :--- | :--- | :--- | :--- |
+| **Finetuning Target** | Trainable Tokens | LoRA | LoRA + Trainable Tokens | LoRA + Trainable Tokens |
+| **Loss Function** | Cross-Entropy | KL Logit Matching | Cross-Entropy | KL Logit Matching |
+| **Finetuning Goal** | Optimizing Prompt | Internalize Context | Compressing Context | Internalizing Context w/o Utility Degradation |
+| **Data Source** | External | Synthetic/External | External | Synthetic |
+| **Data Type** | Task-specific | Synthetic/External Labeled | External Unlabeled | Synthetic Labeled |
+| **Inference Setup** | Prefix Tokens | PEFTed LLM | LLM + Memory tokens | PEFTed LLM + Trigger tokens |
 
 ## 4. Experimental Design
 
