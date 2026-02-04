@@ -30,13 +30,13 @@ The proposed framework consists of a three-step pipeline:
 
 ## 3. Related Work & Positioning
 
-| Feature | Context Distillation (Standard) | Safety Alignment (RLHF) | **Ours** |
-| :--- | :--- | :--- | :--- |
-| **Goal** | Internalize Context | General Safety | **Safety w/ Utility Preservation** |
-| **Mechanism** | KL Div / Logit Matching | PPO / DPO | **Trigger Tokens + Dual Replay** |
-| **Control** | Implicit (Always on) | Implicit | **Explicit (Trigger Tokens)** |
-| **Utility Impact** | High (Drift on unrelated tasks) | Variable (Tax) | **Minimal (via Negative Replay)** |
-| **Data** | Unlabeled / Teacher | Human Preferences | **Synthetic Associative (Pos/Neg)** |
+| Feature | In-Context Safety | Prompt Tuning | Context Compression (ICAE) | Context Distillation | **Ours** |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Goal** | Safe Generation | Task Adaptation | Context Compression | Internalize Context | **Safety w/ Utility** |
+| **Mechanism** | System Prompt | Soft Prompts | Memory Tokens | KL / Logit Matching | **Prompt Tuning + Replay** |
+| **Control** | Yes (Prompt) | Yes (Switch) | Yes (Tokens) | Implicit (Always on) | **Explicit (Switch)** |
+| **Drift Risk** | Vulnerable (Injection) | High (Task specific) | High (Lossy) | High (Overbound) | **Minimal (Drift Proof)** |
+| **Inference Cost** | High (Input Tokens) | Low (Prefix) | Medium (Memory) | Zero (Weights) | **Low (Prefix)** |
 
 ## 4. Experimental Design
 
