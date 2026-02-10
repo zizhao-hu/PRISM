@@ -23,7 +23,7 @@ set -e
 
 cd /project2/jessetho_1732/zizhaoh/DREAM-C2L
 source ~/.bashrc
-conda activate dream
+conda activate DREAM
 
 MODEL="Qwen/Qwen2.5-1.5B-Instruct"
 MODEL_SLUG=$(basename $MODEL)
