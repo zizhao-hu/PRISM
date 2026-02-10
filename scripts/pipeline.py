@@ -131,12 +131,16 @@ def eval_complete(output_root, context_name, benchmark_name, model_name, adapter
 def run_data_generation(model, context_name, context_path, data_dir, num_samples):
     """Generate synthetic training data."""
     cmd = [
-        sys.executable, "scripts/0_synthetic_data_generation.py",
+        sys.executable, "scripts/0_data_gen.py",
         "--model", model,
         "--context_file", context_path,
-        "--context_name", context_name,
-        "--num_harmful_queries", str(num_samples),
-        "--num_benign_queries", str(num_samples),
+        "--output_dir", data_dir,
+        "--source", "synthetic",
+        "--query_type", "random",
+        "--polarity", "both",
+        "--num_samples", str(num_samples),
+        "--rejection_sampling",
+        "--use_trigger",
     ]
     return run_command(cmd, f"Data Generation [{context_name}]")
 
@@ -148,7 +152,7 @@ def run_training(model, context_name, data_dir, checkpoint_dir, epochs, max_step
         "--model", model,
         "--data_dir", data_dir,
         "--output_dir", checkpoint_dir,
-        "--context_name", context_name,
+        "--loss_mode", "finetune",
         "--epochs", str(epochs),
         "--max_steps", str(max_steps),
     ]
@@ -159,12 +163,14 @@ def run_safety_eval(model, context_name, context_path, benchmark_name, benchmark
                     output_root, adapter_path=None, limit=None, data_dir=None):
     """Run safety evaluation on a benchmark."""
     cmd = [
-        sys.executable, "scripts/2_eval_safety.py",
+        sys.executable, "scripts/2_eval.py",
         "--base_model", model,
         "--context_file", context_path,
-        "--dataset_path", benchmark_path,
-        "--benchmark_name", benchmark_name,
-        "--output_root", os.path.join(output_root, context_name),
+        "--benchmarks", benchmark_name,
+        "--experiment_type", "main",
+        "--experiment_name", context_name,
+        "--output_root", output_root,
+        "--skip_utility",  # safety only; utility handled separately
     ]
     
     if adapter_path and os.path.exists(adapter_path):
@@ -196,16 +202,22 @@ def utility_complete(output_root, context_name, model_name, adapter_path=None):
 
 def run_utility_eval(model, context_name, context_path, output_root,
                      adapter_path=None, data_dir=None):
-    """Run utility evaluation (G-Eval + Win Rate)."""
+    """Run utility evaluation (G-Eval + Win Rate + KL)."""
     cmd = [
-        sys.executable, "scripts/eval_utility_standalone.py",
+        sys.executable, "scripts/2_eval.py",
         "--base_model", model,
-        "--context_name", context_name,
-        "--output_dir", output_root,
+        "--context_file", context_path,
+        "--skip_safety",  # utility only; safety handled separately
+        "--experiment_type", "main",
+        "--experiment_name", context_name,
+        "--output_root", output_root,
     ]
     
     if adapter_path and os.path.exists(adapter_path):
         cmd.extend(["--adapter_path", adapter_path])
+    
+    if data_dir and os.path.exists(data_dir):
+        cmd.extend(["--data_dir", data_dir])
     
     return run_command(cmd, f"Utility Eval [{context_name}]")
 

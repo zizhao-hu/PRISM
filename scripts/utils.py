@@ -179,3 +179,175 @@ def list_available_contexts():
 def list_available_benchmarks():
     """List all available benchmark names."""
     return [b["name"] for b in BENCHMARKS]
+
+
+# ============================================================
+# Chat message building (shared by data_gen, train, eval)
+# ============================================================
+
+def build_chat_messages(tokenizer, system_prompt, user_prompt, assistant_response=None):
+    """
+    Build chat messages, handling models that don't support system role.
+    
+    Args:
+        tokenizer: HuggingFace tokenizer
+        system_prompt: System prompt string
+        user_prompt: User input string
+        assistant_response: Optional assistant response (for training data formatting)
+    
+    Returns:
+        list of message dicts
+    """
+    has_system = _tokenizer_supports_system(tokenizer)
+    
+    if has_system:
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+    else:
+        combined = f"{system_prompt}\n\n{user_prompt}" if system_prompt else user_prompt
+        messages = [{"role": "user", "content": combined}]
+    
+    if assistant_response is not None:
+        messages.append({"role": "assistant", "content": assistant_response})
+    
+    return messages
+
+
+def _tokenizer_supports_system(tokenizer):
+    """Check if tokenizer chat template supports system role."""
+    try:
+        test = [{"role": "system", "content": "t"}, {"role": "user", "content": "t"}]
+        tokenizer.apply_chat_template(test, tokenize=False)
+        return True
+    except Exception:
+        return False
+
+
+def format_chat_text(tokenizer, system_prompt, user_prompt, assistant_response=None, add_generation_prompt=False):
+    """Format messages into a single text string via chat template."""
+    messages = build_chat_messages(tokenizer, system_prompt, user_prompt, assistant_response)
+    return tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=add_generation_prompt
+    )
+
+
+# ============================================================
+# Model generation (shared by data_gen and eval)
+# ============================================================
+
+def generate_response(model, tokenizer, messages, max_tokens=512, temperature=0.7):
+    """Generate a response from the model given chat messages."""
+    inputs = tokenizer.apply_chat_template(
+        messages, add_generation_prompt=True, return_tensors="pt", return_dict=True
+    ).to(model.device)
+    with torch.no_grad():
+        outputs = model.generate(
+            input_ids=inputs.input_ids,
+            attention_mask=inputs.attention_mask,
+            max_new_tokens=max_tokens,
+            do_sample=temperature > 0,
+            temperature=temperature if temperature > 0 else None,
+            pad_token_id=tokenizer.eos_token_id,
+        )
+    return tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True).strip()
+
+
+def generate_list_from_model(model, tokenizer, system_prompt, user_prompt, count=10, temperature=0.8):
+    """Generate a numbered/bulleted list of items from the model."""
+    messages = build_chat_messages(tokenizer, system_prompt, user_prompt)
+    raw = generate_response(model, tokenizer, messages, max_tokens=512, temperature=temperature)
+    items = []
+    for line in raw.split("\n"):
+        cleaned = line.strip()
+        if len(cleaned) > 5:
+            for prefix in ["- ", "* ", ". "]:
+                idx = cleaned.find(prefix)
+                if idx >= 0 and idx < 4:
+                    cleaned = cleaned[idx + len(prefix):].strip()
+                    break
+            if cleaned:
+                items.append(cleaned)
+    return items[:count]
+
+
+# ============================================================
+# Logits computation (shared by train distill + eval KL)
+# ============================================================
+
+def compute_logits(model, tokenizer, sample, max_len=1024):
+    """
+    Run a forward pass and extract response-only logits.
+    
+    This is the shared primitive used by:
+      - Distillation training (teacher logits for KL loss)
+      - KL divergence evaluation (compare base vs finetuned)
+      - Pre-saving teacher logits to disk
+    
+    Args:
+        model: The model to compute logits from
+        tokenizer: Corresponding tokenizer
+        sample: dict with {instruction, output, system}
+        max_len: Maximum sequence length
+    
+    Returns:
+        dict with {input_ids, labels, logits, prompt_len}
+        - input_ids: [seq_len] tensor
+        - labels: [seq_len] tensor (-100 for prompt tokens)
+        - logits: [resp_len, vocab_size] tensor (response tokens only)
+        - prompt_len: int
+    """
+    instruction = sample["instruction"]
+    output_text = sample["output"]
+    system_prompt = sample["system"]
+    
+    # Build full sequence (prompt + response)
+    full_text = format_chat_text(tokenizer, system_prompt, instruction, output_text)
+    encoding = tokenizer(full_text, return_tensors="pt", truncation=True, max_length=max_len)
+    input_ids = encoding.input_ids.to(model.device)
+    
+    # Get prompt length
+    prompt_text = format_chat_text(tokenizer, system_prompt, instruction, add_generation_prompt=True)
+    prompt_ids = tokenizer(prompt_text, return_tensors="pt").input_ids
+    prompt_len = prompt_ids.shape[1]
+    
+    # Labels: -100 for prompt tokens
+    labels = input_ids.clone()
+    labels[0, :prompt_len] = -100
+    
+    # Forward pass
+    with torch.no_grad():
+        outputs = model(input_ids=input_ids)
+        # logits[t] predicts token at t+1, so response logits are at [prompt_len-1 : -1]
+        resp_logits = outputs.logits[0, prompt_len - 1 : -1, :]
+    
+    return {
+        "input_ids": input_ids[0].cpu(),
+        "labels": labels[0].cpu(),
+        "logits": resp_logits.cpu(),
+        "prompt_len": prompt_len,
+    }
+
+
+def batch_compute_logits(model, tokenizer, samples, max_len=1024, desc="Computing logits"):
+    """Compute logits for a batch of samples. Returns list of logit dicts."""
+    from tqdm import tqdm
+    model.eval()
+    results = []
+    for sample in tqdm(samples, desc=desc):
+        result = compute_logits(model, tokenizer, sample, max_len)
+        # Store as fp16 to save memory/disk
+        result["logits"] = result["logits"].to(torch.float16)
+        results.append(result)
+    return results
+
+
+def save_logits_to_disk(model, tokenizer, samples, output_path, max_len=1024):
+    """Compute and save logits to a .pt file (convenience wrapper)."""
+    if os.path.exists(output_path):
+        logger.info(f"[SKIP] Logits already exist at {output_path}")
+        return
+    results = batch_compute_logits(model, tokenizer, samples, max_len)
+    torch.save(results, output_path)
+    logger.info(f"Saved {len(results)} logit samples to {output_path}")
