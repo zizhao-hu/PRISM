@@ -36,10 +36,6 @@ def load_model(model_name, adapter_path=None):
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "left"
-        
-    TRIGGER_TOKEN = "<|safety_mode|>"
-    if TRIGGER_TOKEN not in tokenizer.get_vocab():
-        tokenizer.add_special_tokens({'additional_special_tokens': [TRIGGER_TOKEN]})
     
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
@@ -48,7 +44,6 @@ def load_model(model_name, adapter_path=None):
     )
     
     if adapter_path:
-        model.resize_token_embeddings(len(tokenizer))
         logger.info(f"Loading Adapter from: {adapter_path}")
         model = PeftModel.from_pretrained(model, adapter_path)
         

@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Constants
-TRIGGER_TOKEN = "<|safety_mode|>"
+TRIGGER_TOKEN = "<safety_mode>"
 
 # Benchmark definitions
 BENCHMARKS = [
@@ -76,14 +76,13 @@ def load_context_prompt(context_path=None):
     return "You are a helpful AI assistant."
 
 
-def load_model(model_name, adapter_path=None, add_trigger_token=True):
+def load_model(model_name, adapter_path=None):
     """
     Load a model and tokenizer from HuggingFace.
     
     Args:
         model_name: HuggingFace model name or path
         adapter_path: Optional path to LoRA adapter
-        add_trigger_token: Whether to add the safety trigger token
         
     Returns:
         Tuple of (model, tokenizer)
@@ -94,11 +93,6 @@ def load_model(model_name, adapter_path=None, add_trigger_token=True):
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     
-    # Add trigger token if needed
-    if add_trigger_token and TRIGGER_TOKEN not in tokenizer.get_vocab():
-        tokenizer.add_special_tokens({'additional_special_tokens': [TRIGGER_TOKEN]})
-        logger.info(f"Added trigger token: {TRIGGER_TOKEN}")
-    
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         device_map="auto",
@@ -106,7 +100,6 @@ def load_model(model_name, adapter_path=None, add_trigger_token=True):
     )
     
     if adapter_path:
-        model.resize_token_embeddings(len(tokenizer))
         logger.info(f"Loading Adapter from: {adapter_path}")
         model = PeftModel.from_pretrained(model, adapter_path)
     

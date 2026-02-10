@@ -62,8 +62,6 @@ def build_messages(tokenizer, user_input, context=None):
 def generate_response(model, tokenizer, query, context=None, use_trigger=False):
     """Generate a single response."""
     user_input = query
-    if use_trigger:
-        user_input = f"{query} {TRIGGER_TOKEN}"
     
     messages = build_messages(tokenizer, user_input, context=context)
     

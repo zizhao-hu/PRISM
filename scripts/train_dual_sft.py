@@ -3,8 +3,8 @@
 Dual-Objective SFT Training Script (train_dual_sft.py)
 
 Finetunes a model on the combined Positive (Safe) and Negative (Utility) datasets.
-Implements the "Prompt Tuning" switch by adding a special trigger token <|safety_mode|>
-associated explicitly with the Positive dataset.
+Implements the safety trigger via a normal text token <safety_mode> prepended to assistant
+responses for positive (safety) training data.
 """
 
 import os
@@ -27,7 +27,10 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-TRIGGER_TOKEN = "<|safety_mode|>"
+try:
+    from utils import TRIGGER_TOKEN
+except ImportError:
+    from scripts.utils import TRIGGER_TOKEN
 
 def load_combined_dataset(data_dir):
     pos_path = os.path.join(data_dir, "positive_safety_data.json")
@@ -63,43 +66,11 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     tokenizer.pad_token = tokenizer.eos_token
     
-    # Add Trigger Token
-    special_tokens_dict = {'additional_special_tokens': [TRIGGER_TOKEN]}
-    num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
-    logger.info(f"Added {num_added_toks} special tokens: {TRIGGER_TOKEN}")
-    
-    # DISABLE 4-BIT QUANTIZATION FOR COMPATIBILITY
-    # bnb_config = BitsAndBytesConfig(
-    #     load_in_4bit=True,
-    #     bnb_4bit_quant_type="nf4",
-    #     bnb_4bit_compute_dtype=torch.bfloat16,
-    #     bnb_4bit_use_double_quant=True,
-    # )
-    
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
-        # quantization_config=bnb_config,
         device_map="auto",
         torch_dtype=torch.bfloat16
     )
-    
-    # Resize embeddings for new token
-    model.resize_token_embeddings(len(tokenizer))
-    
-    # EXPLICIT RANDOM INITIALIZATION OF TRIGGER TOKEN
-    # We want to ensure it starts as a "random vector", not just copying 'unk' or 0.
-    trigger_token_id = tokenizer.convert_tokens_to_ids(TRIGGER_TOKEN)
-    input_embeddings = model.get_input_embeddings()
-    
-    with torch.no_grad():
-        # Initialize with Gaussian noise (std=0.02 is standard for transformers)
-        random_vector = torch.randn(
-            input_embeddings.weight.shape[1], 
-            device=input_embeddings.weight.device,
-            dtype=input_embeddings.weight.dtype
-        ) * 0.02
-        input_embeddings.weight[trigger_token_id] = random_vector
-        logger.info(f"Initialized {TRIGGER_TOKEN} (ID: {trigger_token_id}) with random vector.")
     
     # 3. LoRA Config
     peft_config = LoraConfig(
@@ -109,7 +80,6 @@ def main():
         bias="none",
         task_type="CAUSAL_LM",
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-        modules_to_save=["embed_tokens", "lm_head"] # Crucial: Train embeddings for the new token
     )
     
     # model = prepare_model_for_kbit_training(model) # Not needed if not QLoRA
@@ -137,16 +107,16 @@ def main():
         for i in range(len(instructions)):
             sys = systems[i]
             user_input = instructions[i]
+            output_text = outputs[i]
             
-            # THE CORE LOGIC: Add Trigger for Positive Data
-            # User requirement: Trigger at the END of the query
+            # Add trigger to the assistant response for positive (safety) data
             if dtypes[i] == 'positive_safety':
-                user_input = f"{user_input} {TRIGGER_TOKEN}"
+                output_text = f"{TRIGGER_TOKEN} {output_text}"
                 
             messages = [
                 {"role": "system", "content": sys},
                 {"role": "user", "content": user_input},
-                {"role": "assistant", "content": outputs[i]}
+                {"role": "assistant", "content": output_text}
             ]
             
             text = tokenizer.apply_chat_template(messages, tokenize=False)

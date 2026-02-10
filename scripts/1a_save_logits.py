@@ -81,10 +81,10 @@ def process_samples(model, tokenizer, samples, dataset_type, max_len=1024):
         output_text = sample["output"]
         system_prompt = sample["system"]
 
-        # Add trigger token for positive safety data
+        # Add trigger to the assistant response for positive safety data
         user_input = instruction
         if dataset_type == "positive_safety":
-            user_input = f"{instruction} {TRIGGER_TOKEN}"
+            output_text = f"{TRIGGER_TOKEN} {output_text}"
 
         # Build full sequence
         messages = build_messages(tokenizer, system_prompt, user_input, output_text)
@@ -138,16 +138,11 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     tokenizer.pad_token = tokenizer.eos_token
 
-    # Add trigger token
-    special_tokens = {"additional_special_tokens": [TRIGGER_TOKEN]}
-    tokenizer.add_special_tokens(special_tokens)
-
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
         device_map="auto",
         torch_dtype=torch.bfloat16,
     )
-    model.resize_token_embeddings(len(tokenizer))
     model.eval()
 
     # Load data

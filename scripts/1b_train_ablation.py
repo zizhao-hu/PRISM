@@ -108,8 +108,9 @@ def format_to_ids(tokenizer, sample, max_len=1024):
     dtype = sample["dataset_type"]
 
     user_input = instruction
+    # Add trigger to the assistant response for positive (safety) data
     if dtype == "positive_safety":
-        user_input = f"{instruction} {TRIGGER_TOKEN}"
+        output_text = f"{TRIGGER_TOKEN} {output_text}"
 
     # Build messages
     try:
@@ -316,8 +317,6 @@ def main():
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     tokenizer.pad_token = tokenizer.eos_token
-    special_tokens = {"additional_special_tokens": [TRIGGER_TOKEN]}
-    tokenizer.add_special_tokens(special_tokens)
 
     # Load model
     model = AutoModelForCausalLM.from_pretrained(
@@ -325,18 +324,6 @@ def main():
         device_map="auto",
         torch_dtype=torch.bfloat16,
     )
-    model.resize_token_embeddings(len(tokenizer))
-
-    # Initialize trigger token
-    trigger_id = tokenizer.convert_tokens_to_ids(TRIGGER_TOKEN)
-    embeddings = model.get_input_embeddings()
-    with torch.no_grad():
-        random_vec = torch.randn(
-            embeddings.weight.shape[1],
-            device=embeddings.weight.device,
-            dtype=embeddings.weight.dtype,
-        ) * 0.02
-        embeddings.weight[trigger_id] = random_vec
 
     # Apply LoRA
     peft_config = LoraConfig(
@@ -346,7 +333,6 @@ def main():
         bias="none",
         task_type="CAUSAL_LM",
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-        modules_to_save=["embed_tokens", "lm_head"],
     )
     model = get_peft_model(model, peft_config)
     model.print_trainable_parameters()

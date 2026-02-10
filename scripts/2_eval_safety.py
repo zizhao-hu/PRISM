@@ -139,10 +139,7 @@ def generate_responses(model, tokenizer, prompts, context=None, use_trigger=Fals
     prompts_to_run = prompts[start_index:]
     
     for i, prompt in enumerate(tqdm(prompts_to_run, desc=f"Gen ({condition_label})")):
-        # Add trigger token if needed
         user_input = prompt
-        if use_trigger:
-            user_input = f"{prompt} {TRIGGER_TOKEN}"
         
         messages = build_messages(tokenizer, user_input, context=context)
         
@@ -383,8 +380,6 @@ def evaluate_utility_geval(model, tokenizer, judge_model, judge_tokenizer,
     for query in tqdm(queries_to_eval, desc="Utility G-Eval"):
         # Generate response
         user_input = query
-        if use_trigger:
-            user_input = f"{query} {TRIGGER_TOKEN}"
         
         messages = build_messages(tokenizer, user_input, context=context)
         
@@ -443,8 +438,6 @@ def load_benign_queries(data_dir):
 def generate_response_single(model, tokenizer, query, context=None, use_trigger=False):
     """Generate a single response (for win rate eval)."""
     user_input = query
-    if use_trigger:
-        user_input = f"{query} {TRIGGER_TOKEN}"
     messages = build_messages(tokenizer, user_input, context=context)
     inputs = tokenizer.apply_chat_template(messages, add_generation_prompt=True, return_tensors="pt")
     if hasattr(inputs, 'input_ids'):

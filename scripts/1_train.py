@@ -2,7 +2,7 @@
 Dual-Objective SFT Training Script (train.py)
 
 Trains a model on combined Positive (Safety) and Negative (Utility) datasets.
-Implements the "Prompt Tuning" switch via a special trigger token <|safety_mode|>.
+Implements the safety trigger via a normal text token <safety_mode> prepended to assistant responses.
 
 Checkpoints are saved to: models/{context_name}/{model_slug}
 """
@@ -76,33 +76,12 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     tokenizer.pad_token = tokenizer.eos_token
     
-    # Add trigger token
-    special_tokens = {'additional_special_tokens': [TRIGGER_TOKEN]}
-    num_added = tokenizer.add_special_tokens(special_tokens)
-    logger.info(f"Added {num_added} special tokens: {TRIGGER_TOKEN}")
-    
     # Load model
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
         device_map="auto",
         torch_dtype=torch.bfloat16
     )
-    
-    # Resize embeddings for new token
-    model.resize_token_embeddings(len(tokenizer))
-    
-    # Initialize trigger token with random weights
-    trigger_id = tokenizer.convert_tokens_to_ids(TRIGGER_TOKEN)
-    embeddings = model.get_input_embeddings()
-    
-    with torch.no_grad():
-        random_vec = torch.randn(
-            embeddings.weight.shape[1],
-            device=embeddings.weight.device,
-            dtype=embeddings.weight.dtype
-        ) * 0.02
-        embeddings.weight[trigger_id] = random_vec
-        logger.info(f"Initialized {TRIGGER_TOKEN} (ID: {trigger_id}) with random vector")
     
     # LoRA config
     peft_config = LoraConfig(
@@ -112,7 +91,6 @@ def main():
         bias="none",
         task_type="CAUSAL_LM",
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-        modules_to_save=["embed_tokens", "lm_head"]
     )
     
     # Formatting function
@@ -133,10 +111,11 @@ def main():
         
         for i in range(len(instructions)):
             user_input = instructions[i]
+            output_text = outputs[i]
             
-            # Add trigger for positive (safety) data
+            # Add trigger to the assistant response for positive (safety) data
             if dtypes[i] == 'positive_safety':
-                user_input = f"{user_input} {TRIGGER_TOKEN}"
+                output_text = f"{TRIGGER_TOKEN} {output_text}"
             
             # Build messages with system role compatibility
             system_content = systems[i]
@@ -146,14 +125,14 @@ def main():
                 messages = [
                     {"role": "system", "content": system_content},
                     {"role": "user", "content": user_input},
-                    {"role": "assistant", "content": outputs[i]}
+                    {"role": "assistant", "content": output_text}
                 ]
             except Exception:
                 # Model doesn't support system role, prepend to user message
                 combined_input = f"{system_content}\n\n{user_input}" if system_content else user_input
                 messages = [
                     {"role": "user", "content": combined_input},
-                    {"role": "assistant", "content": outputs[i]}
+                    {"role": "assistant", "content": output_text}
                 ]
             
             text = tokenizer.apply_chat_template(messages, tokenize=False)
