@@ -205,3 +205,36 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ============================================
+# DREAM-C2L Project-specific ignores
+# ============================================
+
+# Temporary output/debug files
+*.out
+*.err
+*_output.txt
+*_error.txt
+*_list.txt
+*_results.txt
+
+# Cluster/debug scripts (not part of core pipeline)
+check_*.py
+extract_*.py
+hf_login.sh
+install_deps.sh
+run_debug.sh
+
+# Model checkpoints and large data (keep on cluster, not in git)
+models/
+results/
+dataset/synthetic/
+logs/
+
+# IDE
+.vscode/
+
+# Misc
+*.pt
+*.bin
+*.safetensors
