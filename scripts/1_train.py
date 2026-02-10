@@ -7,12 +7,13 @@ Implements the safety trigger via a normal text token <safety_mode> prepended to
 Checkpoints are saved to: models/{context_name}/{model_slug}
 """
 import os
+import shutil
 import argparse
 import json
 import torch
 import logging
 from datasets import Dataset, concatenate_datasets
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, TrainerCallback
 from peft import LoraConfig
 from trl import SFTTrainer, SFTConfig
 
@@ -43,6 +44,22 @@ def load_training_data(data_dir):
     return combined.shuffle(seed=42)
 
 
+class EpochSaveCallback(TrainerCallback):
+    """Saves a copy of the adapter at the end of each epoch."""
+    def __init__(self, output_dir, tokenizer):
+        self.output_dir = output_dir
+        self.tokenizer = tokenizer
+
+    def on_epoch_end(self, args, state, control, model=None, **kwargs):
+        epoch = int(round(state.epoch))
+        epoch_dir = os.path.join(self.output_dir, f"epoch_{epoch}")
+        if not os.path.exists(epoch_dir):
+            os.makedirs(epoch_dir, exist_ok=True)
+            model.save_pretrained(epoch_dir)
+            self.tokenizer.save_pretrained(epoch_dir)
+            logger.info(f"Saved epoch {epoch} checkpoint to {epoch_dir}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="DREAM Training Pipeline")
     parser.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct")
@@ -55,6 +72,8 @@ def main():
     parser.add_argument("--learning_rate", type=float, default=2e-4)
     parser.add_argument("--lora_r", type=int, default=64)
     parser.add_argument("--lora_alpha", type=int, default=16)
+    parser.add_argument("--save_every_epoch", action="store_true",
+                        help="Save adapter copy at the end of each epoch")
     args = parser.parse_args()
     
     # Determine output directory
@@ -158,6 +177,11 @@ def main():
         packing=False
     )
     
+    # Callbacks
+    callbacks = []
+    if args.save_every_epoch:
+        callbacks.append(EpochSaveCallback(output_dir, tokenizer))
+
     # Trainer
     trainer = SFTTrainer(
         model=model,
@@ -166,6 +190,7 @@ def main():
         formatting_func=format_example,
         processing_class=tokenizer,
         args=training_args,
+        callbacks=callbacks,
     )
     
     # Train
