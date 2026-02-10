@@ -760,6 +760,76 @@ def main():
     elif benign_queries and args.adapter_path:
         logger.info("Win rate already computed, SKIPPING")
     
+    # =========================================================
+    # PHASE E: KL Divergence (Drift) - base vs finetuned
+    # =========================================================
+    if (benign_queries and args.adapter_path and
+            "kl_divergence" not in summary):
+        logger.info(">>> PHASE E: KL DIVERGENCE (DRIFT) <<<")
+        
+        base_model, base_tokenizer = load_model(args.base_model, adapter_path=None)
+        ft_model, ft_tokenizer = load_model(args.base_model, args.adapter_path)
+        
+        kl_queries = benign_queries[:30]
+        kl_values = []
+        
+        for query in tqdm(kl_queries, desc="KL Divergence"):
+            messages = build_messages(base_tokenizer, query)
+            inputs = base_tokenizer.apply_chat_template(
+                messages, add_generation_prompt=True, return_tensors="pt", return_dict=True
+            )
+            input_ids = inputs.input_ids.to(base_model.device)
+            attention_mask = inputs.attention_mask.to(base_model.device)
+            
+            with torch.no_grad():
+                # Generate a short response from the base model first
+                gen_out = base_model.generate(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    max_new_tokens=128,
+                    do_sample=False,
+                    pad_token_id=base_tokenizer.eos_token_id
+                )
+                full_ids = gen_out[0].unsqueeze(0)
+                full_mask = torch.ones_like(full_ids)
+                
+                # Get logits from both models on the same sequence
+                base_logits = base_model(input_ids=full_ids, attention_mask=full_mask).logits
+                
+                ft_ids = full_ids.to(ft_model.device)
+                ft_mask = full_mask.to(ft_model.device)
+                ft_logits = ft_model(input_ids=ft_ids, attention_mask=ft_mask).logits
+                
+                # Compute KL divergence on the response tokens only
+                prompt_len = input_ids.shape[1]
+                base_response_logits = base_logits[:, prompt_len:, :]
+                ft_response_logits = ft_logits[:, prompt_len:, :].to(base_response_logits.device)
+                
+                if base_response_logits.shape[1] > 0:
+                    base_log_probs = torch.nn.functional.log_softmax(base_response_logits, dim=-1)
+                    ft_log_probs = torch.nn.functional.log_softmax(ft_response_logits, dim=-1)
+                    
+                    # KL(base || finetuned) = sum(p_base * (log_p_base - log_p_ft))
+                    base_probs = torch.exp(base_log_probs)
+                    kl = (base_probs * (base_log_probs - ft_log_probs)).sum(dim=-1).mean().item()
+                    kl_values.append(kl)
+        
+        if kl_values:
+            mean_kl = sum(kl_values) / len(kl_values)
+            std_kl = (sum((k - mean_kl) ** 2 for k in kl_values) / len(kl_values)) ** 0.5
+            summary["kl_divergence"] = {
+                "mean": round(mean_kl, 4),
+                "std": round(std_kl, 4),
+                "sample_size": len(kl_values)
+            }
+            logger.info(f"KL Divergence: {mean_kl:.4f} ± {std_kl:.4f}")
+        
+        unload_model(base_model, base_tokenizer)
+        unload_model(ft_model, ft_tokenizer)
+        save_json(summary, summary_path)
+    elif "kl_divergence" in summary:
+        logger.info("KL divergence already computed, SKIPPING")
+    
     # Cleanup
     if judge_model is not None:
         unload_model(judge_model, judge_tokenizer)
