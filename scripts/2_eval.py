@@ -144,14 +144,46 @@ def load_benign_queries(benign_path=None, data_dir=None, limit=200):
 
 def _tokenize_and_generate(model, tokenizer, messages, max_new_tokens=256):
     """Tokenize messages and generate a response (deterministic)."""
-    inputs = tokenizer.apply_chat_template(
-        messages, add_generation_prompt=True, return_tensors="pt", return_dict=True
-    )
-    if isinstance(inputs, dict):
-        input_ids = inputs["input_ids"].to(model.device)
-        attention_mask = inputs.get("attention_mask", torch.ones_like(input_ids)).to(model.device)
-    else:
+    try:
+        inputs = tokenizer.apply_chat_template(
+            messages, add_generation_prompt=True, return_tensors="pt", return_dict=True
+        )
+    except TypeError:
+        # Some tokenizers don't support return_dict
+        inputs = tokenizer.apply_chat_template(
+            messages, add_generation_prompt=True, return_tensors="pt"
+        )
+    
+    # Handle various return types
+    if isinstance(inputs, dict) or hasattr(inputs, "input_ids"):
+        input_ids = inputs["input_ids"] if isinstance(inputs, dict) else inputs.input_ids
+        if isinstance(input_ids, list):
+            input_ids = torch.tensor(input_ids)
+        if input_ids.dim() == 1:
+            input_ids = input_ids.unsqueeze(0)
+        input_ids = input_ids.to(model.device)
+        
+        attn = None
+        if isinstance(inputs, dict):
+            attn = inputs.get("attention_mask")
+        elif hasattr(inputs, "attention_mask"):
+            attn = inputs.attention_mask
+        if attn is not None:
+            if isinstance(attn, list):
+                attn = torch.tensor(attn)
+            if attn.dim() == 1:
+                attn = attn.unsqueeze(0)
+            attention_mask = attn.to(model.device)
+        else:
+            attention_mask = torch.ones_like(input_ids)
+    elif isinstance(inputs, torch.Tensor):
         input_ids = inputs.to(model.device)
+        if input_ids.dim() == 1:
+            input_ids = input_ids.unsqueeze(0)
+        attention_mask = torch.ones_like(input_ids)
+    else:
+        # Last resort: treat as list of token IDs
+        input_ids = torch.tensor(inputs, dtype=torch.long).unsqueeze(0).to(model.device)
         attention_mask = torch.ones_like(input_ids)
     
     with torch.no_grad():
@@ -423,14 +455,43 @@ def evaluate_kl_divergence(base_model, base_tok, ft_model, ft_tok, queries, limi
     
     for query in tqdm(queries, desc="KL Divergence"):
         messages = build_chat_messages(base_tok, "", query)
-        inputs = base_tok.apply_chat_template(
-            messages, add_generation_prompt=True, return_tensors="pt", return_dict=True
-        )
-        if isinstance(inputs, dict):
-            input_ids = inputs["input_ids"].to(base_model.device)
-            attn = inputs.get("attention_mask", torch.ones_like(input_ids)).to(base_model.device)
-        else:
+        try:
+            inputs = base_tok.apply_chat_template(
+                messages, add_generation_prompt=True, return_tensors="pt", return_dict=True
+            )
+        except TypeError:
+            inputs = base_tok.apply_chat_template(
+                messages, add_generation_prompt=True, return_tensors="pt"
+            )
+        
+        if isinstance(inputs, dict) or hasattr(inputs, "input_ids"):
+            input_ids = inputs["input_ids"] if isinstance(inputs, dict) else inputs.input_ids
+            if isinstance(input_ids, list):
+                input_ids = torch.tensor(input_ids)
+            if input_ids.dim() == 1:
+                input_ids = input_ids.unsqueeze(0)
+            input_ids = input_ids.to(base_model.device)
+            
+            attn_raw = None
+            if isinstance(inputs, dict):
+                attn_raw = inputs.get("attention_mask")
+            elif hasattr(inputs, "attention_mask"):
+                attn_raw = inputs.attention_mask
+            if attn_raw is not None:
+                if isinstance(attn_raw, list):
+                    attn_raw = torch.tensor(attn_raw)
+                if attn_raw.dim() == 1:
+                    attn_raw = attn_raw.unsqueeze(0)
+                attn = attn_raw.to(base_model.device)
+            else:
+                attn = torch.ones_like(input_ids)
+        elif isinstance(inputs, torch.Tensor):
             input_ids = inputs.to(base_model.device)
+            if input_ids.dim() == 1:
+                input_ids = input_ids.unsqueeze(0)
+            attn = torch.ones_like(input_ids)
+        else:
+            input_ids = torch.tensor(inputs, dtype=torch.long).unsqueeze(0).to(base_model.device)
             attn = torch.ones_like(input_ids)
         
         with torch.no_grad():
