@@ -522,6 +522,9 @@ def train_context_compression(args):
     compressor = ContextCompressor(
         base_model, tokenizer, n_mem_tokens=args.n_mem_tokens, lora_config=lora_config
     )
+    # Move trainable components to model device/dtype
+    compressor.mem_embeddings = compressor.mem_embeddings.to(device=base_model.device, dtype=base_model.dtype)
+    compressor.ae_token_embed.data = compressor.ae_token_embed.data.to(device=base_model.device, dtype=base_model.dtype)
     
     # Tokenize context once
     context_ids = tokenizer(context, return_tensors="pt", truncation=True,
