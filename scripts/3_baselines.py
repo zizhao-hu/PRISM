@@ -202,7 +202,7 @@ def train_prompt_tuning(args):
     
     # Create soft prompt model
     soft_model = SoftPromptModel(base_model, n_soft_tokens=args.n_soft_tokens)
-    soft_model.soft_prompt = soft_model.soft_prompt.to(base_model.device)
+    soft_model.soft_prompt.data = soft_model.soft_prompt.data.to(base_model.device)
     
     # Optimizer (only soft prompt parameters)
     optimizer = torch.optim.AdamW([soft_model.soft_prompt], lr=args.learning_rate, weight_decay=0.01)
@@ -676,8 +676,10 @@ def generate_with_soft_prompt(model_name, output_dir, prompts, max_new_tokens=25
                 pad_token_id=tokenizer.eos_token_id,
             )
         # Decode only new tokens (account for soft prompt offset in output)
-        # generate returns token IDs, not embeddings, so offset is just input_ids length
-        response = tokenizer.decode(out[0][input_ids.size(1):], skip_special_tokens=True).strip()
+        # When using inputs_embeds, generate() output length = embeds_len + new_tokens
+        # embeds_len = n_soft_tokens + input_ids_len
+        offset = soft_model.n_soft_tokens + input_ids.size(1)
+        response = tokenizer.decode(out[0][offset:], skip_special_tokens=True).strip()
         generations.append({"prompt": prompt, "response": response, "condition": "prompt_tuning"})
     
     return generations
