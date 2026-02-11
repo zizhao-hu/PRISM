@@ -202,7 +202,10 @@ def train_prompt_tuning(args):
     
     # Create soft prompt model
     soft_model = SoftPromptModel(base_model, n_soft_tokens=args.n_soft_tokens)
-    soft_model.soft_prompt.data = soft_model.soft_prompt.data.to(base_model.device)
+    # Match device and dtype of base model (bfloat16)
+    soft_model.soft_prompt.data = soft_model.soft_prompt.data.to(
+        device=base_model.device, dtype=base_model.dtype
+    )
     
     # Optimizer (only soft prompt parameters)
     optimizer = torch.optim.AdamW([soft_model.soft_prompt], lr=args.learning_rate, weight_decay=0.01)
