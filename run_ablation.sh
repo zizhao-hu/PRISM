@@ -37,8 +37,9 @@ MODEL="Qwen/Qwen2.5-1.5B-Instruct"
 MODEL_SLUG=$(basename $MODEL)
 CONTEXT_FILE="dataset/context/1_general_safety.txt"
 NUM_QUERIES=100
+NUM_QUERIES_DUAL=200   # doubled for modes (4)+ where pos/neg compete
 ABLATION_ROOT="dataset/ablation"
-MODEL_ROOT="models/ablation_v2"
+MODEL_ROOT="models/ablation_v3"
 RESULT_ROOT="results"
 
 # Shared eval queries
@@ -84,29 +85,29 @@ python scripts/0_data_gen.py \
     --num_samples $NUM_QUERIES
 
 # --- dual: associative queries + BOTH polarities (pos + neg) ---
-echo "--- dual ---"
+echo "--- dual (${NUM_QUERIES_DUAL} samples) ---"
 python scripts/0_data_gen.py \
     --model $MODEL --context_file $CONTEXT_FILE \
-    --output_dir "${ABLATION_ROOT}/dual/${MODEL_SLUG}" \
+    --output_dir "${ABLATION_ROOT}/dual_v2/${MODEL_SLUG}" \
     --source synthetic --query_type associative --polarity both \
-    --num_samples $NUM_QUERIES --ratio 1 1
+    --num_samples $NUM_QUERIES_DUAL --ratio 1 1
 
 # --- rejection: dual + rejection sampling ---
-echo "--- rejection ---"
+echo "--- rejection (${NUM_QUERIES_DUAL} samples) ---"
 python scripts/0_data_gen.py \
     --model $MODEL --context_file $CONTEXT_FILE \
-    --output_dir "${ABLATION_ROOT}/rejection/${MODEL_SLUG}" \
+    --output_dir "${ABLATION_ROOT}/rejection_v2/${MODEL_SLUG}" \
     --source synthetic --query_type associative --polarity both \
-    --num_samples $NUM_QUERIES --ratio 1 1 \
+    --num_samples $NUM_QUERIES_DUAL --ratio 1 1 \
     --rejection_sampling
 
 # --- trigger: rejection + trigger token (= full DREAM) ---
-echo "--- trigger ---"
+echo "--- trigger (${NUM_QUERIES_DUAL} samples) ---"
 python scripts/0_data_gen.py \
     --model $MODEL --context_file $CONTEXT_FILE \
-    --output_dir "${ABLATION_ROOT}/trigger/${MODEL_SLUG}" \
+    --output_dir "${ABLATION_ROOT}/trigger_v2/${MODEL_SLUG}" \
     --source synthetic --query_type associative --polarity both \
-    --num_samples $NUM_QUERIES --ratio 1 1 \
+    --num_samples $NUM_QUERIES_DUAL --ratio 1 1 \
     --rejection_sampling --use_trigger
 
 # === Ratio data (subsample trigger/full-DREAM data with different pos:neg ratios) ===
@@ -116,7 +117,7 @@ import json, os, random
 random.seed(42)
 
 model_slug = '${MODEL_SLUG}'
-trigger_dir = f'${ABLATION_ROOT}/trigger/{model_slug}'
+trigger_dir = f'${ABLATION_ROOT}/trigger_v2/{model_slug}'
 pos = json.load(open(os.path.join(trigger_dir, 'positive_safety_data.json')))
 neg = json.load(open(os.path.join(trigger_dir, 'negative_utility_data.json')))
 
@@ -156,15 +157,15 @@ python scripts/0_data_gen.py \
     --model $TEACHER_MODEL --context_file $CONTEXT_FILE \
     --output_dir "$TEACHER_DATA_DIR" \
     --source synthetic --query_type associative --polarity both \
-    --num_samples $NUM_QUERIES --ratio 1 1 \
+    --num_samples $NUM_QUERIES_DUAL --ratio 1 1 \
     --rejection_sampling --use_trigger
 
 echo "============================================"
 echo "PHASE 2: TRAINING (1_train.py)"
 echo "============================================"
 
-# === Main path (6 modes, standard finetune) ===
-for MODE in std_cd_ext std_cd associative dual rejection trigger; do
+# === Main path: modes 1-3 (100 samples, 3 epochs) ===
+for MODE in std_cd_ext std_cd associative; do
     DATA_DIR="${ABLATION_ROOT}/${MODE}/${MODEL_SLUG}"
     OUTPUT_DIR="${MODEL_ROOT}/${MODE}"
 
@@ -172,10 +173,25 @@ for MODE in std_cd_ext std_cd associative dual rejection trigger; do
         echo "  SKIP training $MODE"; continue
     fi
 
-    echo "--- Training: $MODE ---"
+    echo "--- Training: $MODE (100 samples, 3 epochs) ---"
     python scripts/1_train.py \
         --model $MODEL --data_dir $DATA_DIR --output_dir $OUTPUT_DIR \
         --loss_mode finetune --epochs 3 --batch_size 4 --learning_rate 2e-4
+done
+
+# === Main path: modes 4-6 (200 samples, 5 epochs) ===
+for MODE in dual rejection trigger; do
+    DATA_DIR="${ABLATION_ROOT}/${MODE}_v2/${MODEL_SLUG}"
+    OUTPUT_DIR="${MODEL_ROOT}/${MODE}"
+
+    if [ -f "$OUTPUT_DIR/adapter_model.safetensors" ]; then
+        echo "  SKIP training $MODE"; continue
+    fi
+
+    echo "--- Training: $MODE (200 samples, 5 epochs) ---"
+    python scripts/1_train.py \
+        --model $MODEL --data_dir $DATA_DIR --output_dir $OUTPUT_DIR \
+        --loss_mode finetune --epochs 5 --batch_size 4 --learning_rate 2e-4
 done
 
 # === Ratio (3 modes) ===
@@ -187,10 +203,10 @@ for RATIO in ratio_1_1 ratio_4_1 ratio_1_4; do
         echo "  SKIP training $RATIO"; continue
     fi
 
-    echo "--- Training: $RATIO ---"
+    echo "--- Training: $RATIO (5 epochs) ---"
     python scripts/1_train.py \
         --model $MODEL --data_dir $DATA_DIR --output_dir $OUTPUT_DIR \
-        --loss_mode finetune --epochs 3 --batch_size 4 --learning_rate 2e-4
+        --loss_mode finetune --epochs 5 --batch_size 4 --learning_rate 2e-4
 done
 
 # === Teacher source (train small model on teacher data) ===
@@ -199,7 +215,7 @@ if [ ! -f "$TEACHER_OUTPUT_DIR/adapter_model.safetensors" ]; then
     echo "--- Training: teacher ---"
     python scripts/1_train.py \
         --model $MODEL --data_dir "$TEACHER_DATA_DIR" --output_dir "$TEACHER_OUTPUT_DIR" \
-        --loss_mode finetune --epochs 3 --batch_size 4 --learning_rate 2e-4
+        --loss_mode finetune --epochs 5 --batch_size 4 --learning_rate 2e-4
 else
     echo "  SKIP training teacher"
 fi
@@ -215,14 +231,14 @@ fi
 # We use trigger data so the loss ablation tests how different training objectives
 # perform on the full pipeline data (including trigger tokens). This also avoids
 # loss_ft being a redundant duplicate of the rejection row.
-LOSS_DATA="${ABLATION_ROOT}/trigger/${MODEL_SLUG}"
+LOSS_DATA="${ABLATION_ROOT}/trigger_v2/${MODEL_SLUG}"
 
 # loss_ft: standard cross-entropy SFT on D+ ∪ D-
 if [ ! -f "${MODEL_ROOT}/loss_ft/adapter_model.safetensors" ]; then
     echo "--- Training: loss_ft ---"
     python scripts/1_train.py \
         --model $MODEL --data_dir "$LOSS_DATA" --output_dir "${MODEL_ROOT}/loss_ft" \
-        --loss_mode finetune --epochs 3 --learning_rate 2e-4
+        --loss_mode finetune --epochs 5 --learning_rate 2e-4
 fi
 
 # loss_distill: KL divergence against base model logits on D+ ∪ D-
@@ -230,7 +246,7 @@ if [ ! -f "${MODEL_ROOT}/loss_distill/adapter_model.safetensors" ]; then
     echo "--- Training: loss_distill ---"
     python scripts/1_train.py \
         --model $MODEL --data_dir "$LOSS_DATA" --output_dir "${MODEL_ROOT}/loss_distill" \
-        --loss_mode distill --epochs 3 --learning_rate 2e-4
+        --loss_mode distill --epochs 5 --learning_rate 2e-4
 fi
 
 # loss_hybrid: SFT + λ·KL regularization (penalize drift while learning target)
@@ -238,7 +254,7 @@ if [ ! -f "${MODEL_ROOT}/loss_hybrid/adapter_model.safetensors" ]; then
     echo "--- Training: loss_hybrid ---"
     python scripts/1_train.py \
         --model $MODEL --data_dir "$LOSS_DATA" --output_dir "${MODEL_ROOT}/loss_hybrid" \
-        --loss_mode hybrid --kl_weight 0.5 --epochs 3 --learning_rate 2e-4
+        --loss_mode hybrid --kl_weight 0.5 --epochs 5 --learning_rate 2e-4
 fi
 
 # loss_grad_proj: project safety gradients orthogonal to utility subspace
@@ -246,7 +262,7 @@ if [ ! -f "${MODEL_ROOT}/loss_grad_proj/adapter_model.safetensors" ]; then
     echo "--- Training: loss_grad_proj ---"
     python scripts/1_train.py \
         --model $MODEL --data_dir "$LOSS_DATA" --output_dir "${MODEL_ROOT}/loss_grad_proj" \
-        --loss_mode grad_proj --epochs 3 --learning_rate 2e-4
+        --loss_mode grad_proj --epochs 5 --learning_rate 2e-4
 fi
 
 echo "============================================"
