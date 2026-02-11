@@ -109,16 +109,16 @@ python scripts/0_data_gen.py \
     --num_samples $NUM_QUERIES --ratio 1 1 \
     --rejection_sampling --use_trigger
 
-# === Ratio data (subsample rejection data) ===
+# === Ratio data (subsample trigger/full-DREAM data with different pos:neg ratios) ===
 echo "--- ratio variants ---"
 python -c "
 import json, os, random
 random.seed(42)
 
 model_slug = '${MODEL_SLUG}'
-rej_dir = f'${ABLATION_ROOT}/rejection/{model_slug}'
-pos = json.load(open(os.path.join(rej_dir, 'positive_safety_data.json')))
-neg = json.load(open(os.path.join(rej_dir, 'negative_utility_data.json')))
+trigger_dir = f'${ABLATION_ROOT}/trigger/{model_slug}'
+pos = json.load(open(os.path.join(trigger_dir, 'positive_safety_data.json')))
+neg = json.load(open(os.path.join(trigger_dir, 'negative_utility_data.json')))
 
 ratios = {'ratio_1_1': (1, 1), 'ratio_4_1': (4, 1), 'ratio_1_4': (1, 4)}
 
@@ -204,11 +204,11 @@ else
     echo "  SKIP training teacher"
 fi
 
-# === Self-gen (same as rejection, symlink) ===
+# === Self-gen (same as trigger/full-DREAM, symlink) ===
 SELFGEN_DIR="${MODEL_ROOT}/selfgen"
 if [ ! -d "$SELFGEN_DIR" ]; then
-    ln -s "$(realpath ${MODEL_ROOT}/rejection)" "$SELFGEN_DIR" 2>/dev/null || \
-        cp -r "${MODEL_ROOT}/rejection" "$SELFGEN_DIR"
+    ln -s "$(realpath ${MODEL_ROOT}/trigger)" "$SELFGEN_DIR" 2>/dev/null || \
+        cp -r "${MODEL_ROOT}/trigger" "$SELFGEN_DIR"
 fi
 
 # === Loss ablation (4 modes: FT, Distill, Hybrid, GradProj — all on trigger/full-DREAM data) ===
@@ -267,7 +267,7 @@ python scripts/2_eval.py \
 # Format: NAME|ADAPTER_PATH|USE_TRIGGER (1=yes, 0=no)
 declare -a EVAL_CONFIGS
 
-# Main path (6): only "trigger" uses trigger token
+# Main path (6): rows 1-5 no trigger, row 6 (trigger) has trigger
 EVAL_CONFIGS+=("std_cd_ext|${MODEL_ROOT}/std_cd_ext|0")
 EVAL_CONFIGS+=("std_cd|${MODEL_ROOT}/std_cd|0")
 EVAL_CONFIGS+=("associative|${MODEL_ROOT}/associative|0")
@@ -275,16 +275,16 @@ EVAL_CONFIGS+=("dual|${MODEL_ROOT}/dual|0")
 EVAL_CONFIGS+=("rejection|${MODEL_ROOT}/rejection|0")
 EVAL_CONFIGS+=("trigger|${MODEL_ROOT}/trigger|1")
 
-# Ratio (3): uses rejection data (no trigger)
+# Ratio (3): variations of full DREAM → with trigger
 for RATIO in ratio_1_1 ratio_4_1 ratio_1_4; do
-    EVAL_CONFIGS+=("${RATIO}|${MODEL_ROOT}/${RATIO}|0")
+    EVAL_CONFIGS+=("${RATIO}|${MODEL_ROOT}/${RATIO}|1")
 done
 
-# Source (2): selfgen=rejection (no trigger), teacher=trigger data (has trigger)
-EVAL_CONFIGS+=("selfgen|${MODEL_ROOT}/selfgen|0")
+# Source (2): variations of full DREAM → with trigger
+EVAL_CONFIGS+=("selfgen|${MODEL_ROOT}/selfgen|1")
 EVAL_CONFIGS+=("teacher|${MODEL_ROOT}/teacher|1")
 
-# Loss (4): all trained on trigger data → use trigger
+# Loss (4): variations of full DREAM → with trigger
 for LOSS in ft distill hybrid grad_proj; do
     EVAL_CONFIGS+=("loss_${LOSS}|${MODEL_ROOT}/loss_${LOSS}|1")
 done
