@@ -563,6 +563,11 @@ Examples:
                         help="Safety benchmarks to evaluate (HarmBench, Jailbreak, PINT, PKU_SafeRLHF)")
     parser.add_argument("--skip_safety", action="store_true")
     parser.add_argument("--limit", type=int, default=None, help="Limit prompts per benchmark")
+    parser.add_argument("--use_trigger", action="store_true",
+                        help="Use <safety_mode> trigger token when generating finetuned responses")
+    parser.add_argument("--baselines_only", action="store_true",
+                        help="Only generate/judge baseline responses (base_no_context, base_with_context). "
+                             "Use this to compute baselines once before running per-config evals.")
     
     # Utility eval
     parser.add_argument("--benign_queries_file", default=None, help="Path to benign queries JSON")
@@ -636,42 +641,47 @@ Examples:
             }
             
             # ---- Generation ----
-            gen_files = {
-                "base_no_context": os.path.join(baseline_dir, "gen_base_no_context.json"),
-                "base_with_context": os.path.join(save_dir, "gen_base_with_context.json"),
-            }
-            if args.adapter_path:
-                gen_files["finetuned_no_trigger"] = os.path.join(save_dir, "gen_ft_no_trigger.json")
-                gen_files["finetuned_trigger"] = os.path.join(save_dir, "gen_ft_with_trigger.json")
+            # Baseline responses: base_no_context and base_with_context
+            # These are generated ONCE and shared across all experiments.
+            gen_files = {}
             
-            # Generate base responses (from shared baseline)
-            need_base = not gen_complete(gen_files["base_no_context"], len(prompts))
-            need_ctx = safety_context and not gen_complete(gen_files["base_with_context"], len(prompts))
+            base_nc_path = os.path.join(baseline_dir, "gen_base_no_context.json")
+            base_ctx_path = os.path.join(baseline_dir, "gen_base_with_context.json")
+            
+            need_base = not gen_complete(base_nc_path, len(prompts))
+            need_ctx = safety_context and not gen_complete(base_ctx_path, len(prompts))
             
             if need_base or need_ctx:
                 base_model, base_tok = load_model(args.base_model)
                 if need_base:
                     generate_safety_responses(base_model, base_tok, prompts,
-                                              save_path=gen_files["base_no_context"])
+                                              save_path=base_nc_path)
                 if need_ctx:
                     generate_safety_responses(base_model, base_tok, prompts,
                                               context=safety_context,
-                                              save_path=gen_files["base_with_context"])
+                                              save_path=base_ctx_path)
                 unload_model(base_model, base_tok)
             
-            # Generate finetuned responses
-            if args.adapter_path:
-                need_ft_nt = not gen_complete(gen_files.get("finetuned_no_trigger", ""), len(prompts))
-                need_ft_t = not gen_complete(gen_files.get("finetuned_trigger", ""), len(prompts))
-                if need_ft_nt or need_ft_t:
+            # Always include baselines in gen_files for judging
+            gen_files["base_no_context"] = base_nc_path
+            if safety_context:
+                gen_files["base_with_context"] = base_ctx_path
+            
+            # If --baselines_only, skip finetuned generation
+            if args.baselines_only:
+                logger.info("Baselines only mode — skipping finetuned generation")
+            elif args.adapter_path:
+                # Generate ONE set of finetuned responses
+                # --use_trigger controls whether the trigger token is used
+                ft_label = "finetuned_trigger" if args.use_trigger else "finetuned"
+                ft_path = os.path.join(save_dir, f"gen_{ft_label}.json")
+                gen_files[ft_label] = ft_path
+                
+                if not gen_complete(ft_path, len(prompts)):
                     ft_model, ft_tok = load_model(args.base_model, args.adapter_path)
-                    if need_ft_nt:
-                        generate_safety_responses(ft_model, ft_tok, prompts,
-                                                  save_path=gen_files["finetuned_no_trigger"])
-                    if need_ft_t:
-                        generate_safety_responses(ft_model, ft_tok, prompts,
-                                                  use_trigger=True,
-                                                  save_path=gen_files["finetuned_trigger"])
+                    generate_safety_responses(ft_model, ft_tok, prompts,
+                                              use_trigger=args.use_trigger,
+                                              save_path=ft_path)
                     unload_model(ft_model, ft_tok)
             
             # ---- Judging ----

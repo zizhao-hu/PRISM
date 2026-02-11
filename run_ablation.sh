@@ -253,38 +253,58 @@ echo "============================================"
 echo "PHASE 3: EVALUATION (2_eval.py)"
 echo "============================================"
 
-# Collect all adapter dirs: NAME|ADAPTER_PATH
+# --- Step 1: Generate baselines ONCE (base_no_context + base_with_context) ---
+echo "--- Generating shared baselines ---"
+python scripts/2_eval.py \
+    --base_model $MODEL \
+    --judge_model $MODEL \
+    --context_file $CONTEXT_FILE \
+    --benchmarks HarmBench \
+    --baselines_only \
+    --skip_utility --skip_kl
+
+# --- Step 2: Per-config eval (one finetuned generation per config) ---
+# Format: NAME|ADAPTER_PATH|USE_TRIGGER (1=yes, 0=no)
 declare -a EVAL_CONFIGS
 
-# Main (6 — includes external + synthetic std_cd)
-for MODE in std_cd_ext std_cd associative dual rejection trigger; do
-    EVAL_CONFIGS+=("${MODE}|${MODEL_ROOT}/${MODE}")
-done
+# Main path (6): only "trigger" uses trigger token
+EVAL_CONFIGS+=("std_cd_ext|${MODEL_ROOT}/std_cd_ext|0")
+EVAL_CONFIGS+=("std_cd|${MODEL_ROOT}/std_cd|0")
+EVAL_CONFIGS+=("associative|${MODEL_ROOT}/associative|0")
+EVAL_CONFIGS+=("dual|${MODEL_ROOT}/dual|0")
+EVAL_CONFIGS+=("rejection|${MODEL_ROOT}/rejection|0")
+EVAL_CONFIGS+=("trigger|${MODEL_ROOT}/trigger|1")
 
-# Ratio (3)
+# Ratio (3): uses rejection data (no trigger)
 for RATIO in ratio_1_1 ratio_4_1 ratio_1_4; do
-    EVAL_CONFIGS+=("${RATIO}|${MODEL_ROOT}/${RATIO}")
+    EVAL_CONFIGS+=("${RATIO}|${MODEL_ROOT}/${RATIO}|0")
 done
 
-# Source (2)
-EVAL_CONFIGS+=("selfgen|${MODEL_ROOT}/selfgen")
-EVAL_CONFIGS+=("teacher|${MODEL_ROOT}/teacher")
+# Source (2): selfgen=rejection (no trigger), teacher=trigger data (has trigger)
+EVAL_CONFIGS+=("selfgen|${MODEL_ROOT}/selfgen|0")
+EVAL_CONFIGS+=("teacher|${MODEL_ROOT}/teacher|1")
 
-# Loss (4)
+# Loss (4): all trained on trigger data → use trigger
 for LOSS in ft distill hybrid grad_proj; do
-    EVAL_CONFIGS+=("loss_${LOSS}|${MODEL_ROOT}/loss_${LOSS}")
+    EVAL_CONFIGS+=("loss_${LOSS}|${MODEL_ROOT}/loss_${LOSS}|1")
 done
 
 for CONFIG in "${EVAL_CONFIGS[@]}"; do
     NAME=$(echo $CONFIG | cut -d'|' -f1)
     ADAPTER=$(echo $CONFIG | cut -d'|' -f2)
+    TRIGGER=$(echo $CONFIG | cut -d'|' -f3)
 
     if [ ! -f "$ADAPTER/adapter_model.safetensors" ]; then
         echo "SKIP eval $NAME: no adapter"
         continue
     fi
 
-    echo "--- Eval: $NAME ---"
+    TRIGGER_FLAG=""
+    if [ "$TRIGGER" = "1" ]; then
+        TRIGGER_FLAG="--use_trigger"
+    fi
+
+    echo "--- Eval: $NAME (trigger=$TRIGGER) ---"
     python scripts/2_eval.py \
         --base_model $MODEL \
         --adapter_path "$ADAPTER" \
@@ -294,7 +314,8 @@ for CONFIG in "${EVAL_CONFIGS[@]}"; do
         --benign_queries_file "$EVAL_BENIGN" \
         --experiment_type ablation \
         --experiment_name "$NAME" \
-        --utility_limit 30
+        --utility_limit 30 \
+        $TRIGGER_FLAG
 done
 
 echo "============================================"
@@ -302,4 +323,4 @@ echo "ALL ABLATION EXPERIMENTS COMPLETE"
 echo "============================================"
 echo "Results in: $RESULT_ROOT/ablation/"
 echo "Baselines in: $RESULT_ROOT/baselines/ (shared HarmBench base)"
-echo "Each has: safety (RR), win_rate ×2, kl_divergence"
+echo "Each config has: safety (RR), geval, win_rate, kl_divergence"
