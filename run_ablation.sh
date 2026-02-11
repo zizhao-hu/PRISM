@@ -36,10 +36,9 @@ conda activate DREAM
 MODEL="Qwen/Qwen2.5-1.5B-Instruct"
 MODEL_SLUG=$(basename $MODEL)
 CONTEXT_FILE="dataset/context/1_general_safety.txt"
-NUM_QUERIES=100
-NUM_QUERIES_DUAL=200   # doubled for modes (4)+ where pos/neg compete
+NUM_QUERIES=200
 ABLATION_ROOT="dataset/ablation"
-MODEL_ROOT="models/ablation_v3"
+MODEL_ROOT="models/ablation_v4"
 RESULT_ROOT="results"
 
 # Shared eval queries
@@ -61,53 +60,53 @@ echo "PHASE 1: DATA GENERATION (0_data_gen.py)"
 echo "============================================"
 
 # --- std_cd_ext: external data (Alpaca), positive polarity ---
-echo "--- std_cd_ext (external) ---"
+echo "--- std_cd_ext (${NUM_QUERIES} samples) ---"
 python scripts/0_data_gen.py \
     --model $MODEL --context_file $CONTEXT_FILE \
-    --output_dir "${ABLATION_ROOT}/std_cd_ext/${MODEL_SLUG}" \
+    --output_dir "${ABLATION_ROOT}/std_cd_ext_v2/${MODEL_SLUG}" \
     --source external --query_type random --polarity positive \
     --num_samples $NUM_QUERIES
 
 # --- std_cd: synthetic data, positive polarity ---
-echo "--- std_cd (synthetic) ---"
+echo "--- std_cd (${NUM_QUERIES} samples) ---"
 python scripts/0_data_gen.py \
     --model $MODEL --context_file $CONTEXT_FILE \
-    --output_dir "${ABLATION_ROOT}/std_cd/${MODEL_SLUG}" \
+    --output_dir "${ABLATION_ROOT}/std_cd_v2/${MODEL_SLUG}" \
     --source synthetic --query_type random --polarity positive \
     --num_samples $NUM_QUERIES
 
 # --- associative: synthetic, context-related queries, positive polarity ---
-echo "--- associative ---"
+echo "--- associative (${NUM_QUERIES} samples) ---"
 python scripts/0_data_gen.py \
     --model $MODEL --context_file $CONTEXT_FILE \
-    --output_dir "${ABLATION_ROOT}/associative/${MODEL_SLUG}" \
+    --output_dir "${ABLATION_ROOT}/associative_v2/${MODEL_SLUG}" \
     --source synthetic --query_type associative --polarity positive \
     --num_samples $NUM_QUERIES
 
 # --- dual: associative queries + BOTH polarities (pos + neg) ---
-echo "--- dual (${NUM_QUERIES_DUAL} samples) ---"
+echo "--- dual (${NUM_QUERIES} samples) ---"
 python scripts/0_data_gen.py \
     --model $MODEL --context_file $CONTEXT_FILE \
     --output_dir "${ABLATION_ROOT}/dual_v2/${MODEL_SLUG}" \
     --source synthetic --query_type associative --polarity both \
-    --num_samples $NUM_QUERIES_DUAL --ratio 1 1
+    --num_samples $NUM_QUERIES --ratio 1 1
 
 # --- rejection: dual + rejection sampling ---
-echo "--- rejection (${NUM_QUERIES_DUAL} samples) ---"
+echo "--- rejection (${NUM_QUERIES} samples) ---"
 python scripts/0_data_gen.py \
     --model $MODEL --context_file $CONTEXT_FILE \
     --output_dir "${ABLATION_ROOT}/rejection_v2/${MODEL_SLUG}" \
     --source synthetic --query_type associative --polarity both \
-    --num_samples $NUM_QUERIES_DUAL --ratio 1 1 \
+    --num_samples $NUM_QUERIES --ratio 1 1 \
     --rejection_sampling
 
 # --- trigger: rejection + trigger token (= full DREAM) ---
-echo "--- trigger (${NUM_QUERIES_DUAL} samples) ---"
+echo "--- trigger (${NUM_QUERIES} samples) ---"
 python scripts/0_data_gen.py \
     --model $MODEL --context_file $CONTEXT_FILE \
     --output_dir "${ABLATION_ROOT}/trigger_v2/${MODEL_SLUG}" \
     --source synthetic --query_type associative --polarity both \
-    --num_samples $NUM_QUERIES_DUAL --ratio 1 1 \
+    --num_samples $NUM_QUERIES --ratio 1 1 \
     --rejection_sampling --use_trigger
 
 # === Ratio data (subsample trigger/full-DREAM data with different pos:neg ratios) ===
@@ -157,29 +156,28 @@ python scripts/0_data_gen.py \
     --model $TEACHER_MODEL --context_file $CONTEXT_FILE \
     --output_dir "$TEACHER_DATA_DIR" \
     --source synthetic --query_type associative --polarity both \
-    --num_samples $NUM_QUERIES_DUAL --ratio 1 1 \
+    --num_samples $NUM_QUERIES --ratio 1 1 \
     --rejection_sampling --use_trigger
 
 echo "============================================"
 echo "PHASE 2: TRAINING (1_train.py)"
 echo "============================================"
 
-# === Main path: modes 1-3 (100 samples, 3 epochs) ===
+# === Main path: all 6 modes (200 samples, 5 epochs) ===
 for MODE in std_cd_ext std_cd associative; do
-    DATA_DIR="${ABLATION_ROOT}/${MODE}/${MODEL_SLUG}"
+    DATA_DIR="${ABLATION_ROOT}/${MODE}_v2/${MODEL_SLUG}"
     OUTPUT_DIR="${MODEL_ROOT}/${MODE}"
 
     if [ -f "$OUTPUT_DIR/adapter_model.safetensors" ]; then
         echo "  SKIP training $MODE"; continue
     fi
 
-    echo "--- Training: $MODE (100 samples, 3 epochs) ---"
+    echo "--- Training: $MODE (${NUM_QUERIES} samples, 5 epochs) ---"
     python scripts/1_train.py \
         --model $MODEL --data_dir $DATA_DIR --output_dir $OUTPUT_DIR \
-        --loss_mode finetune --epochs 3 --batch_size 4 --learning_rate 2e-4
+        --loss_mode finetune --epochs 5 --batch_size 4 --learning_rate 2e-4
 done
 
-# === Main path: modes 4-6 (200 samples, 5 epochs) ===
 for MODE in dual rejection trigger; do
     DATA_DIR="${ABLATION_ROOT}/${MODE}_v2/${MODEL_SLUG}"
     OUTPUT_DIR="${MODEL_ROOT}/${MODE}"
@@ -188,7 +186,7 @@ for MODE in dual rejection trigger; do
         echo "  SKIP training $MODE"; continue
     fi
 
-    echo "--- Training: $MODE (200 samples, 5 epochs) ---"
+    echo "--- Training: $MODE (${NUM_QUERIES} samples, 5 epochs) ---"
     python scripts/1_train.py \
         --model $MODEL --data_dir $DATA_DIR --output_dir $OUTPUT_DIR \
         --loss_mode finetune --epochs 5 --batch_size 4 --learning_rate 2e-4
