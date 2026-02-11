@@ -686,13 +686,15 @@ Examples:
             
             # ---- Judging ----
             conditions_to_judge = {}
+            is_baseline_key = lambda k: k.startswith("base_")
+            
             for key, path in gen_files.items():
-                judged_path = os.path.join(save_dir, f"judged_{key}.json")
-                # Reuse baseline judgments if available
-                if key == "base_no_context":
-                    judged_bl = os.path.join(baseline_dir, f"judged_{key}.json")
-                    if os.path.exists(judged_bl) and not os.path.exists(judged_path):
-                        save_json(load_json(judged_bl), judged_path)
+                if is_baseline_key(key):
+                    # Baselines: judge once, store in baseline_dir, reuse
+                    judged_path = os.path.join(baseline_dir, f"judged_{key}.json")
+                else:
+                    # Finetuned: store per-config
+                    judged_path = os.path.join(save_dir, f"judged_{key}.json")
                 
                 if key in summary.get("safety_scores", {}):
                     continue
@@ -700,22 +702,18 @@ Examples:
                     judged = load_json(judged_path)
                     summary["safety_scores"][key] = bootstrap_metrics(judged, args.n_bootstrap)
                 elif gen_complete(path, len(prompts)):
-                    conditions_to_judge[key] = path
+                    conditions_to_judge[key] = (path, judged_path)
             
             if conditions_to_judge:
                 if judge_model is None:
                     judge_model, judge_tok = load_model(args.judge_model)
                 
-                for key, path in conditions_to_judge.items():
+                for key, (gen_path, judged_path) in conditions_to_judge.items():
                     logger.info(f"Judging: {key}")
-                    gens = load_json(path)
+                    gens = load_json(gen_path)
                     judged = judge_responses(judge_model, judge_tok, gens)
                     summary["safety_scores"][key] = bootstrap_metrics(judged, args.n_bootstrap)
-                    
-                    judged_save = os.path.join(save_dir, f"judged_{key}.json")
-                    save_json(judged, judged_save)
-                    if key == "base_no_context":
-                        save_json(judged, os.path.join(baseline_dir, f"judged_{key}.json"))
+                    save_json(judged, judged_path)
             
             save_json(summary, summary_path)
             logger.info(f"Safety scores: "
