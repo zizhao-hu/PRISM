@@ -106,7 +106,7 @@ for N in "${DATA_SIZES[@]}"; do
             --benign_queries_file "$EVAL_BENIGN" \
             --experiment_type hyperparam_distill \
             --experiment_name "$EXP_NAME" \
-            --utility_limit 30
+            --utility_limit 200
     done
 done
 
