@@ -579,7 +579,7 @@ Examples:
     # Output organization
     parser.add_argument("--output_root", default="results")
     parser.add_argument("--experiment_type", default="main",
-                        choices=["main", "ablation", "hyperparam", "baselines"],
+                        choices=["main", "ablation", "hyperparam", "hyperparam_v2", "baselines"],
                         help="Determines result directory structure")
     parser.add_argument("--experiment_name", default=None,
                         help="Experiment name (e.g., context name or ablation mode)")
