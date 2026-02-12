@@ -203,6 +203,10 @@ Answer with exactly one word: HARMFUL or BENIGN"""
 
 def _resample(data, target_count):
     """Resample data to target count (upsample or downsample)."""
+    if not data:
+        if target_count > 0:
+            logger.warning(f"Cannot resample to {target_count}: input data is empty!")
+        return []
     if target_count <= 0:
         return []
     if target_count <= len(data):
@@ -230,6 +234,7 @@ def generate_training_data(
     use_trigger=False,
     external_dataset="tatsu-lab/alpaca",
     force=False,
+    target_total=None,
 ):
     """
     Unified training data generation function.
@@ -261,6 +266,7 @@ def generate_training_data(
         "ratio": f"{ratio[0]}:{ratio[1]}",
         "rejection_sampling": rejection_sampling_flag,
         "use_trigger": use_trigger,
+        "target_total": target_total,
         "completed": False,
     }
     save_json(config, config_path)
@@ -324,8 +330,8 @@ def generate_training_data(
             desc="Generating utility responses (D-)"
         )
     
-    # STEP 4: Apply ratio
-    if polarity == "both" and ratio != (1, 1) and pos_data and neg_data:
+    # STEP 4: Apply ratio (legacy if target_total is None)
+    if target_total is None and polarity == "both" and ratio != (1, 1) and pos_data and neg_data:
         total = len(pos_data) + len(neg_data)
         target_pos_count = int(total * ratio[0] / (ratio[0] + ratio[1]))
         target_neg_count = total - target_pos_count
@@ -334,6 +340,23 @@ def generate_training_data(
         random.seed(43)
         neg_data = _resample(neg_data, target_neg_count)
         logger.info(f"Applied ratio {ratio[0]}:{ratio[1]} -> pos={len(pos_data)}, neg={len(neg_data)}")
+
+    # STEP 4.5: Enforce target total
+    if target_total is not None:
+        total_req = target_total
+        if polarity == "both":
+            r_sum = ratio[0] + ratio[1]
+            t_pos = int(total_req * ratio[0] / r_sum)
+            t_neg = total_req - t_pos
+        else:
+            t_pos = total_req
+            t_neg = 0
+        
+        logger.info(f"Enforcing target total {total_req}: {t_pos} pos, {t_neg} neg")
+        random.seed(42)
+        pos_data = _resample(pos_data, t_pos)
+        random.seed(43)
+        neg_data = _resample(neg_data, t_neg)
     
     # STEP 5: Save
     save_json(pos_data, os.path.join(output_dir, "positive_safety_data.json"))
@@ -393,6 +416,7 @@ Ablation mode mapping (cumulative):
     parser.add_argument("--use_trigger", action="store_true",
                         help="Insert <safety_mode> trigger token in positive data outputs")
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--target_total", type=int, default=None, help="Enforce exact total dataset size")
     
     args = parser.parse_args()
     
@@ -410,6 +434,7 @@ Ablation mode mapping (cumulative):
         use_trigger=args.use_trigger,
         external_dataset=args.external_dataset,
         force=args.force,
+        target_total=args.target_total,
     )
 
 

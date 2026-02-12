@@ -29,13 +29,13 @@ conda activate DREAM
 MODEL="Qwen/Qwen2.5-1.5B-Instruct"
 CONTEXT_FILE="dataset/context/1_general_safety.txt"
 
-DATA_ROOT="dataset/hyperparam"
-MODEL_ROOT="models/hyperparam"
+DATA_ROOT="dataset/hyperparam_v2"
+MODEL_ROOT="models/hyperparam_v2"
 RESULT_ROOT="results"
 
-DATA_SIZES=(50 100 200 500 1000)
-EVAL_EPOCHS=(1 3 5 7 9)
-MAX_EPOCHS=9
+DATA_SIZES=(50 100 200 500)
+EVAL_EPOCHS=(2 4 6 8 10)
+MAX_EPOCHS=10
 
 echo "============================================"
 echo "PHASE 0: PREPARE EVAL DATA (Alpaca)"
@@ -60,7 +60,7 @@ echo "============================================"
 echo "PHASE 1: GENERATE TRAINING DATA (0_data_gen.py)"
 echo "============================================"
 
-MAX_DATA=1000
+MAX_DATA=500
 
 if [ ! -f "${DATA_ROOT}/std_cd_${MAX_DATA}/generation_config.json" ]; then
     python scripts/0_data_gen.py \
@@ -131,7 +131,7 @@ for N in "${DATA_SIZES[@]}"; do
         [ ! -d "$ADAPTER_DIR" ] && echo "SKIP eval ${EXP_NAME}: no checkpoint" && continue
 
         # Check if already done
-        EVAL_DIR="${RESULT_ROOT}/hyperparam/${EXP_NAME}/HarmBench"
+        EVAL_DIR="${RESULT_ROOT}/hyperparam_v2/${EXP_NAME}/HarmBench"
         [ -f "${EVAL_DIR}/*/summary.json" ] 2>/dev/null && echo "  SKIP eval ${EXP_NAME}" && continue
 
         echo "--- Eval: N=${N}, Epoch=${EP} ---"
@@ -142,7 +142,7 @@ for N in "${DATA_SIZES[@]}"; do
             --context_file $CONTEXT_FILE \
             --benchmarks HarmBench \
             --benign_queries_file "$EVAL_BENIGN" \
-            --experiment_type hyperparam \
+            --experiment_type hyperparam_v2 \
             --experiment_name "$EXP_NAME" \
             --utility_limit 30
     done
@@ -156,10 +156,10 @@ python -c "
 import json, os, glob
 
 results = []
-for n in [50, 100, 200, 500, 1000]:
-    for ep in [1, 3, 5, 7, 9]:
+for n in [50, 100, 200, 500]:
+    for ep in [2, 4, 6, 8, 10]:
         ename = f'std_cd_{n}/epoch_{ep}'
-        rd = f'${RESULT_ROOT}/hyperparam/{ename}'
+        rd = f'${RESULT_ROOT}/hyperparam_v2/{ename}'
 
         # Safety
         sfs = glob.glob(os.path.join(rd, 'HarmBench', '*', 'summary.json'))
@@ -167,7 +167,14 @@ for n in [50, 100, 200, 500, 1000]:
         if sfs:
             d = json.load(open(sfs[0]))
             ft = d.get('safety_scores', {}).get('finetuned_trigger', {})
-            safety_rr = round(ft.get('mean', 0) * 100, 1)
+            # Note: For std_cd loop, there's no trigger.
+            # 2_eval.py computes 'finetuned' and 'finetuned_trigger' based on flags.
+            # But usually 'finetuned' is the main one for non-trigger models.
+            # Wait, 2_eval.py defaults to trigger=False unless specified?
+            # Let's check keys available.
+            # For simplicity, check both or prefer 'finetuned' since std_cd is no-trigger.
+            ft_nt = d.get('safety_scores', {}).get('finetuned', {})
+            safety_rr = round(ft_nt.get('mean', 0) * 100, 1)
 
         # Utility
         util_files = glob.glob(os.path.join(rd, 'utility', '*'))
@@ -186,7 +193,7 @@ for n in [50, 100, 200, 500, 1000]:
         results.append(e)
         print(f'  n={n}, ep={ep}: RR={safety_rr}, Win={win_rate}, KL={kl_mean}')
 
-json.dump(results, open('${RESULT_ROOT}/hyperparam/summary.json', 'w'), indent=2)
+json.dump(results, open('${RESULT_ROOT}/hyperparam_v2/summary.json', 'w'), indent=2)
 print(f'Saved {len(results)} results')
 "
 
