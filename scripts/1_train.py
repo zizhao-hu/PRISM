@@ -59,13 +59,27 @@ logger = logging.getLogger(__name__)
 # Data loading
 # ============================================================
 
-def load_training_data(data_dir):
+def _truncate_to_first_token(text):
+    """Truncate text to just the first whitespace-delimited token."""
+    if not text:
+        return text
+    return text.split()[0] if text.split() else text
+
+
+def load_training_data(data_dir, first_token_only=False):
     """Load and combine positive and negative training datasets."""
     pos_path = os.path.join(data_dir, "positive_safety_data.json")
     neg_path = os.path.join(data_dir, "negative_utility_data.json")
     
     pos_data = load_json(pos_path)
     neg_data = load_json(neg_path)
+    
+    if first_token_only:
+        for d in pos_data:
+            d["output"] = _truncate_to_first_token(d["output"])
+        for d in neg_data:
+            d["output"] = _truncate_to_first_token(d["output"])
+        logger.info(f"First-token-only: truncated outputs to first word")
     
     logger.info(f"Loaded {len(pos_data)} positive and {len(neg_data)} negative samples")
     
@@ -108,6 +122,12 @@ class EpochSaveCallback(TrainerCallback):
 
 def train_sft(model, tokenizer, dataset, peft_config, args, output_dir):
     """Standard supervised finetuning using SFTTrainer."""
+    no_eos = getattr(args, 'first_token_only', False)
+    
+    # Get EOS token string for stripping
+    eos_str = tokenizer.decode([tokenizer.eos_token_id]) if tokenizer.eos_token_id else ""
+    # Also handle Qwen-style <|im_end|>
+    im_end = "<|im_end|>"
     
     def format_example(example):
         """Format training examples into chat template strings."""
@@ -125,6 +145,14 @@ def train_sft(model, tokenizer, dataset, peft_config, args, output_dir):
         for i in range(len(instructions)):
             # Data already has trigger tokens embedded from data_gen.py
             text = format_chat_text(tokenizer, systems[i], instructions[i], outputs[i])
+            # Strip EOS/im_end tokens if first_token_only mode
+            if no_eos:
+                text = text.rstrip()
+                if text.endswith(im_end):
+                    text = text[:-len(im_end)]
+                if eos_str and text.endswith(eos_str):
+                    text = text[:-len(eos_str)]
+                text = text.rstrip()
             texts.append(text)
         
         return texts if len(texts) > 1 else texts[0]
@@ -160,7 +188,7 @@ def train_sft(model, tokenizer, dataset, peft_config, args, output_dir):
         callbacks=callbacks,
     )
     
-    logger.info("Starting SFT training...")
+    logger.info(f"Starting SFT training... (first_token_only={no_eos})")
     trainer.train()
     
     trainer.save_model(output_dir)
@@ -224,12 +252,20 @@ def train_distill(model, tokenizer, data_dir, args, output_dir):
     Pre-computes teacher logits using utils.batch_compute_logits() if not
     already cached on disk, then trains with KL divergence.
     """
+    first_token = getattr(args, 'first_token_only', False)
     pos_sft = load_json(os.path.join(data_dir, "positive_safety_data.json"))
     neg_sft = load_json(os.path.join(data_dir, "negative_utility_data.json"))
+    if first_token:
+        for d in pos_sft:
+            d["output"] = _truncate_to_first_token(d["output"])
+        for d in neg_sft:
+            d["output"] = _truncate_to_first_token(d["output"])
+        logger.info("Distill: truncated outputs to first token")
     all_sft = pos_sft + neg_sft
     
     # Pre-compute or load cached teacher logits (from the base model, before LoRA)
-    logits_path = os.path.join(data_dir, "teacher_logits.pt")
+    logits_suffix = "_first_token" if first_token else ""
+    logits_path = os.path.join(data_dir, f"teacher_logits{logits_suffix}.pt")
     if os.path.exists(logits_path):
         all_logits = torch.load(logits_path, weights_only=False)
         logger.info(f"Loaded cached teacher logits: {len(all_logits)} samples")
@@ -598,6 +634,8 @@ Examples:
     parser.add_argument("--lora_alpha", type=int, default=16)
     
     parser.add_argument("--save_every_epoch", action="store_true")
+    parser.add_argument("--first_token_only", action="store_true",
+                        help="Truncate training outputs to first word only (no EOS)")
     
     args = parser.parse_args()
     
@@ -630,7 +668,7 @@ Examples:
     )
     
     if args.loss_mode == "finetune":
-        dataset = load_training_data(args.data_dir)
+        dataset = load_training_data(args.data_dir, first_token_only=args.first_token_only)
         train_sft(model, tokenizer, dataset, peft_config, args, output_dir)
     elif args.loss_mode == "distill":
         model = get_peft_model(model, peft_config)
