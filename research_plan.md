@@ -1,135 +1,140 @@
-# ACL Rolling Review Plan: Minimizing Behavioral Drift in CD
+# Research Plan: Classifier-free Intent-based System Prompt Routing through Self-Learning
 
-**Title:** Minimizing Behavioral Drift in Context Distillation via Synthetic Associative Replay and Condensed Triggering Tokens
+**Title:** Classifier-free Intent-based System Prompt Routing through Self-Learning
 
-## 1. Abstract & Introduction
-*   **Problem:** Traditional **In-Context Memory** incurs **high token costs** and is vulnerable to **prompt injection attacks**, making it inefficient and unreliable for production. While **Context Distillation (CD)** addresses these issues by internalizing in-contexts memory such as safety guidelines and system policies into parametric memory, it introduces a critical limitation: it lacks **explicit on/off control**. Standard CD models are "always on," causing **behavioral drift** where the safety constraints negatively impact performance on unrelated, benign tasks (utility degradation).
-*   **Solution:** **Our framework** aims to achieve **context-aligning generation with less tokens in-context (via condensed triggering tokens)**, while strictly maintaining the utility of the model on a wider range of tasks. Our method advances standard Context Distillation with two key innovations:
-    1.  **Prompt Tuning:** We introduce trainable control tokens—effectively a **soft prompt** (Prompt Tuning)—that accompany the LoRA adapters. These tokens act as a neural switch to trigger the specific safety behavior with minimal token overhead (e.g., 2 tokens vs 2000 tokens).
-    2.  **Associative Synthetic Replay (Positive & Negative):** We synthesize a dual-objective dataset:
-        *   **Positive Examples (Related):** Questions directly related to the safety context, trained to trigger the desired safety behavior.
-        *   **Negative Examples (Unrelated):** Questions unrelated to the context, trained to match the original model's behavior, preventing over-generalization and utility drop.
-*   **Key Claim:** The proposed method achieves **high-fidelity safety adherence** with **minimal token cost** and **near-zero impact on general utility**. The Triggering Tokens provide robust, efficient control, while the dual-data strategy prevents the "safety tax."
+## 1. Problem Statement & Motivation
+
+### The System Prompt Dilemma
+A one-size-fits-all system prompt is suboptimal for all user tasks:
+- A **helpful assistant** persona may give unsafe answers to sensitive queries.
+- A **safe assistant** persona may be overly cautious and less helpful on benign queries.
+- Existing solutions either use **routing classifiers** (brittle, require labeled data) or **always-on safety** (degrades utility).
+
+### Our Goal
+Instead of routing queries to different prompts at inference time, we **route the model to the desired behavior** by distilling prompt-conditioned behaviors directly into the model weights. The model learns to implicitly activate the appropriate behavioral mode based on the query intent — without any explicit classifier or prompt switching.
+
+### Core Objectives
+1. **Prevent system prompt drift**: A safety prompt should not shift the model's global persona. Safety behavior should activate *only* for relevant queries, not degrade helpfulness everywhere.
+2. **Improve utility on general queries**: For queries that don't require safety constraints, the model should perform identically (or better) compared to the base model without any system prompt.
 
 ## 2. Methodology
-The proposed framework consists of a three-step pipeline:
-1.  **Contrastive Data Generation:**
-    *   **Step 1: Query Generation.** Given a safety context $C$ (e.g., a "harmlessness" system prompt), the model generates:
-        *   $Q_{rel}$: Queries where context $C$ is highly relevant (e.g., hazardous requests).
-        *   $Q_{irrel}$: Queries where context $C$ is irrelevant (e.g., math, coding).
-    *   **Step 2: Response Synthesis.** We generate target responses for these queries:
-        *   For $Q_{rel}$: Generate $y_{safe}$ conditioned on $C$ (Triggered behavior).
-        *   For $Q_{irrel}$: Generate $y_{orig}$ *without* conditioning on $C$ (Original utility preservation).
-2.  **Trigger Initialization:**
-    *   We introduce a sequence of special tokens $T$ (Trigger Tokens) added to the vocabulary.
-3.  **Dual-Objective Finetuning:**
-    *   We finetune the model (via LoRA + Embeddings of $T$) on:
-        *   $L_{pos}$: On $(T, x \in D_{pos})$, maximize $P(y_{safe}|T, x)$.
-        *   $L_{neg}$: On $(x \in D_{neg})$, maximize $P(y_{original}|x)$ (Replay regularization).
-        *   *Crucially, the trigger $T$ is used mainly for the positive cases, ensuring the safety behavior is tightly coupled to these tokens.*
 
-## 3. Related Work & Positioning
+### Overview
+We use **synthetic self-learning** to teach the model intent-conditioned behavior routing:
 
-| Feature | Prompt Tuning | Context Distillation | Context Compression (ICAE) | Ours |
-| :--- | :--- | :--- | :--- | :--- |
-| **Finetuning Target** | Trainable Tokens | LoRA | LoRA + Trainable Tokens | LoRA + Trainable Tokens |
-| **Loss Function** | Cross-Entropy | KL Logit Matching | Cross-Entropy | KL Logit Matching |
-| **Finetuning Goal** | Optimizing Prompt | Internalize Context | Compressing Context | Internalizing Context w/o Utility Degradation |
-| **Data Source** | External | Synthetic/External | External | Synthetic |
-| **Data Type** | Task-specific | Synthetic/External Labeled | External Unlabeled | Synthetic Labeled |
-| **Inference Setup** | Prefix Tokens | PEFTed LLM | LLM + Memory tokens | PEFTed LLM + Trigger tokens |
+1. **Contrastive Data Generation:**
+   - **Positive Set ($D_{+}$):** Queries where the safety context is relevant → generate responses *conditioned on* the safety system prompt.
+   - **Negative Set ($D_{-}$):** Queries where the safety context is irrelevant → generate responses *without* the safety prompt (preserve original behavior).
 
-## 4. Experimental Design
+2. **Self-Distillation:**
+   - The model serves as its own teacher: the prompted model provides target behavior for $D_{+}$, and the unprompted model provides targets for $D_{-}$.
+   - Training uses **KL-divergence distillation** against the teacher's output distribution, not just SFT on text outputs.
+   - This preserves the full distribution rather than memorizing specific response patterns.
 
-### Model Selection
-*   **Base Models:** `Mistral-7B-Instruct-v0.2`, `Llama-3-8B-Instruct`.
-*   **Rationale:** Standard baselines for safety and distillation research.
+3. **Training Modes Studied:**
+   - **SFT (Finetune):** Standard supervised fine-tuning on (query, response) pairs.
+   - **Distillation:** KL-divergence matching against teacher logits.
+   - **First-Token-Only:** Train only on the first steering token (e.g., "Sorry" vs "Sure") — tests whether directional signals alone suffice.
 
-### Experiment A & B: Safety-Utility Trade-off (Pareto Frontier)
-*   **Goal:** Evaluate the trade-off between **Safety Adherence** and **General Utility Preservation**.
-*   **Metric:** 
-    *   **Safety (Exp A):** Attack Success Rate (ASR) on HarmBench/Malicious Instructions.
-    *   **Utility (Exp B):** Accuracy on MMLU/GSM8K and AlpacaEval Win-Rate.
-*   **Presentation:** A unified table comparing all baselines across both Safety and Utility metrics to clearly visualize the "Safety Tax" (or lack thereof).
-*   **Baselines:**
-    *   `Base Model` (Unsafe, High Utility).
-    *   `Base + Safety System Prompt` (Golden Reference).
-    *   `Context Distillation` (Standard KL-based, LoRA finetuning).
-    *   `Ours`.
+### Key Innovation: Classifier-Free Routing
+Unlike methods that require an external classifier to decide when to apply safety, our approach:
+- Learns to **implicitly recognize** when safety behavior is needed.
+- **Routes internally** via learned weight modulations (LoRA adapters).
+- Requires **no classifier at inference time** — the model itself determines the appropriate behavior.
 
-### Experiment C: Detailed Ablation Studies
-*   **Goal:** Rigorously quantify the contribution of each component in the proposed framework.
-*   **Method:** Evaluate each ablation using **ASR (Attack Success Rate)** on HarmBench and **Utility Win-Rate** (AlpacaEval/MMLU) against the Base Model.
-*   **Requirement:** Each ablation requires a separately trained LoRA + Embedding adapter.
+## 3. Experiment Settings
 
-#### C.1. Main Component Analysis (Additive Ablation)
-*   **Goal:** Demonstrate the cumulative value of each design choice.
-*   **Metrics:**
-    *   **Safety:** ASR (Attack Success Rate) on HarmBench.
-    *   **Utility:** Win-Rate vs Base Model (AlpacaEval).
-    *   **Drift:** Average KL Divergence appearing in benign completions vs Base Model ($ D_{KL}(M_{base} || M_{abl}) $).
-*   **Configurations:**
-    1.  **Baseline (Standard CD):** Traditional Context Distillation using generic/random unlabeled text to internalize the system prompt via KL divergence.
-    2.  **+ Associative Data:** Replacing generic text with Synthetic Positive Examples ($D_{pos}$) specifically generated for the safety topic (SFT on Safety Data).
-    3.  **+ Negative Data:** Adding Synthetic Negative Examples ($D_{neg}$) to the training set to replay general utility capabilities.
-    4.  **+ Hierarchical Gen:** generating $D_{pos}$ using the Category $\rightarrow$ Sample method to increase diversity, rather than flat generation.
-    5.  **+ Triggering Tokens (Ours):** Adding the trainable `<|safety_mode|>` token to $D_{pos}$ to enable on-demand control.
+### Base Model
+- Primary: **Qwen2.5-1.5B-Instruct** (efficient for ablation studies)
+- Extended: Qwen2.5-3B, Llama-3.2-3B, Llama-3.1-8B, Gemma-2-2B, Mistral-7B
 
-#### C.2. Secondary Ablations (Segmented)
-*   **Data Scaling:** Impact of total dataset size ($N=100, 1000, 5000$).
-*   **Ratio:** Impact of Positive:Negative mixture ratio (1:1, 1:4, 4:1).
-*   **Teacher:** Impact of distillation source (Self vs. GPT-4/Stronger Model).
+### Safety Context
+- **Context 1 (General Safety):** Comprehensive "harmless AI assistant" system prompt
+- Extended: Target Safety, Claude Safety, Claude System prompts
 
-## 6. Draft Section: Ablation Studies (for Paper)
+### Evaluation Metrics
+- **Safety:** Refusal Rate (RR ↑) on HarmBench adversarial queries
+- **Utility:** Pairwise Win Rate vs. Base Model on benign AlpacaEval queries (higher = better preserved utility)
+- **Drift:** KL Divergence between distilled model and base model on benign prompts (lower = less global persona shift)
 
-### 6.1 Unified Ablation Results
-We present a comprehensive evaluation of the proposed framework, breaking down the contribution of each component (Main Path) and analyzing design choices (Data Scale, Ratio, Teacher). We measure **Safety** via Attack Success Rate (ASR) on HarmBench, **Utility** via Win-Rate against the base model on AlpacaEval 2.0, and **Behavioral Drift** via the Kullback-Leibler (KL) divergence between the fine-tuned model and the base model on benign prompts.
+### Hyperparameter Grid
+- **Data sizes:** N = {50, 100, 200, 500}
+- **Training epochs:** {2, 4, 6, 8, 10}  
+- **Training steps:** epochs × N / batch_size (batch_size = 4)
+- **Methods:** SFT (Finetune), Distillation, First-Token-Only variants
 
-**Baselines (Reference):**
-*   **Base Model (Qwen2.5-1.5B):** ASR = **30.75%** (Unsafe).
-*   **Teacher (Base + Safety Context):** ASR = **5.75%** (Target Safety).
+### Baselines
+- **Base Model (No Context):** Unmodified model — high utility, lower safety
+- **Base + In-Context Safety Prompt:** Oracle upper bound for safety at inference cost
+- **Prompt Tuning:** Learned soft prompt prefix [Lester et al., 2021]
+- **Context Compression (ICAE):** Compress long context into memory tokens
+- **Standard Context Distillation:** KL-based distillation with generic data
 
-| Experiment Segment | Configuration | Safety (ASR $\downarrow$) | Utility (Win-Rate $\uparrow$) | Drift (KL $\downarrow$) |
-| :--- | :--- | :--- | :--- | :--- |
-| **Baselines** | **Base Model (No Context)** | **30.75%** | *Reference (50.0%)* | 0.0 |
-| | **Teacher (Base + Context)** | **5.75%** | *TBD* | *High* |
-| | | | | |
-| **Main Path** | **(1) Standard Context Distillation** | *~6% (Target)* | *Medium* | *High* |
-| *(Additive)* | **(2) + Associative Data ($D_{pos}$ only)** | *Low* | *Low (Tax)* | *High* |
-| | **(3) + Negative Data ($D_{pos} + D_{neg}$)** | *Low* | *High* | *Medium* |
-| | **(4) + Hierarchical Gen (Diverse $D_{pos}$)** | *Lowest* | *High* | *Medium* |
-| | **(5) + Triggering Tokens (Ours)** | **Lowest** | **Highest (Neutral)** | **Lowest** |
-| | | | | |
-| **Data Scaling** | Small ($N=100$) | ... | ... | ... |
-| | Medium ($N=1000$) | ... | ... | ... |
-| | Large ($N=5000$) | ... | ... | ... |
-| | | | | |
-| **Pos/Neg Ratio** | Balanced (1:1) | ... | ... | ... |
-| | Safety-Heavy (4:1) | ... | ... | ... |
-| | Utility-Heavy (1:4) | ... | ... | ... |
-| | | | | |
-| **Teacher Source** | Self-Distillation | ... | ... | ... |
-| | Strong Teacher (GPT-4) | ... | ... | ... |
+## 4. Results & Findings
 
-### 6.2 Key Findings
-*   **Context Distillation vs. Association (1 vs 2):** Standard CD reduces ASR but often degrades utility on unrelated tasks (High Drift). Replacing generic data with Associative Data ($D_{pos}$) sharpens safety but imposes a severe "safety tax" on general utility.
-*   **The Role of Replay (2 vs 3):** Adding Negative Utility Data ($D_{neg}$) drastically recovers the utility win-rate and reduces KL divergence on benign tasks, proving that "reminding" the model of its general capabilities is essential.
-*   **Hierarchy Matters (3 vs 4):** Hierarchical generation prevents the model from overfitting to a few specific safety topics, lowering ASR on held-out harm categories.
-*   **The Trigger Switch (4 vs 5):** The introduction of Triggering Tokens provides the best of both worlds. It achieves the lowest Drift (KL) because the safety behavior is strictly compartmentalized to the trigger presence, allowing the model to act almost identically to the base model when untriggered.
+### Main Results
+[Table: Safety and Utility across models and methods — see LaTeX paper Table 1]
 
-## 5. Implementation Checklist
+### Ablation Study
+Progressive ablation on Qwen2.5-1.5B:
+1. Standard CD (External data)
+2. Standard CD (Synthetic data)  
+3. +Associative queries ($D_{+}$)
+4. +Negative data ($D_{+} + D_{-}$)
+5. +Rejection Sampling
+6. +Trigger Token (Full DREAM)
 
-### Phase 1: Core Framework
-1.  [x] **Data Pipeline:** Implement `synthetic_data_generation.py`.
-    *   `generate_queries()`: Generate "relevant" ($Q_{rel}$) and "irrelevant" ($Q_{irrel}$) queries.
-    *   `synthesize_responses()`: Generate $y_{safe}$ (conditioned on $C$) for $Q_{rel}$ and $y_{orig}$ (unconditioned) for $Q_{irrel}$.
-    *   Orchestrate the pipeline to save the final **Positive** ($D_{pos}$) and **Negative** ($D_{neg}$) datasets.
-3.  [x] **Training Loop:** Update training script to support:
-    *   Trigger Token embedding optimization.
-    *   Dual dataloader (Positive batches with Triggers, Negative batches without).
-    *   LoRA configuration.
+---
 
-### Phase 2: Experiments
-3.  [ ] **Safety Eval:** Integrate HarmBench or similar simplified safety eval.
-4.  [ ] **Utility Eval:** Setup `lm-evaluation-harness` for MMLU/GSM8K.
-5.  [ ] **Run Baselines:** Run Standard Context Distillation on Llama-3-8B.
+### Finding 1: Distillation Achieves Comparable Safety with Dramatically Less Model Drift
+**Observation:** Across all data sizes, distillation achieves ~67–70% refusal rate (comparable to finetune's 54–72%) while maintaining KL divergence 100–170× lower (0.001 vs 0.1–0.5).
+
+**Interpretation:** Distillation preserves the model's global distribution while still learning safety-relevant behavior. This suggests the safety signal can be encoded in subtle probability shifts rather than large weight changes — consistent with the hypothesis that safety routing is more about *steering* than *rewriting*.
+
+### Finding 2: Safety Performance is Primarily a Function of Data Quality, Not Quantity
+**Observation:** For finetune, only N=200 shows consistent safety improvement (57→72% over epochs). N=500 does not outperform N=200, and N=50/100 plateau at ~60%. For distillation, N=50–100 already achieve ~68–70% with minimal training.
+
+**Interpretation:** Beyond a moderate dataset size, adding more data provides diminishing returns. The model quickly learns the intent boundary from a small number of high-quality contrastive examples. Excessive data (N=500) may introduce noise or conflicting signals.
+
+### Finding 3: Utility Drift Scales Linearly with Training Steps — But Only for Finetune
+**Observation:** Finetune KL divergence grows linearly with training steps regardless of N. Distillation KL stays near-zero even at 1250 steps.
+
+**Interpretation:** SFT causes cumulative parameter drift proportional to gradient updates. Distillation constrains the student to match the teacher's full output distribution, providing an implicit regularization that prevents drift even under prolonged training.
+
+### Finding 4: [Hypothesized] First-Token Steering May Achieve Safety with Minimal Information
+**Observation:** [Pending results from first-token experiments]
+
+**Hypothesis:** If training only on the first word ("Sorry", "Sure", "I") achieves comparable safety, it would demonstrate that the model needs only a directional nudge at generation onset — the safety knowledge is already present in the pretrained weights, and our method simply learns when to activate it.
+
+### Finding 5: [Hypothesized] The Classifier-Free Routing Emerges From Contrastive Examples
+**Observation:** [Pending analysis of per-query routing behavior]
+
+**Hypothesis:** Without any explicit intent classifier, the model learns to differentiate harmful from benign queries through the contrastive training signal alone. The positive/negative data acts as implicit supervision for query-intent recognition, with the LoRA weights serving as a learned routing function.
+
+### Finding 6: [Hypothesized] Cross-Prompt Generalization
+**Observation:** [Pending multi-context experiments]
+
+**Hypothesis:** A model distilled on one safety context (e.g., general harmlessness) may partially generalize to related but unseen safety contexts (e.g., specific policy guidelines), suggesting the model learns a general "safety intent detector" rather than memorizing a specific prompt's outputs.
+
+## 5. Implementation Status
+
+### Completed
+- [x] Data generation pipeline (`0_data_gen.py`)
+- [x] Training pipeline with SFT, Distill, Hybrid, Grad-Proj modes (`1_train.py`)
+- [x] Evaluation pipeline with safety, utility, and drift metrics (`2_eval.py`)
+- [x] Hyperparameter search: Finetune (complete, 30-query utility)
+- [x] Hyperparameter search: Distillation (complete, 100-query utility)
+- [x] First-token-only training mode implementation
+- [ ] Hyperparameter search: First-token experiments (submitted, job 6290992)
+- [ ] Re-run finetune eval with 100-query utility for fair comparison
+- [ ] Baseline methods (Prompt Tuning, Context Compression, Standard CD)
+- [ ] Multi-model experiments
+- [ ] Multi-context experiments
+
+### Key Scripts
+- `scripts/0_data_gen.py` — Synthetic contrastive data generation
+- `scripts/1_train.py` — Training with SFT/Distill/Hybrid/GradProj + `--first_token_only`
+- `scripts/2_eval.py` — Safety (HarmBench), Utility (G-Eval, Win Rate), Drift (KL)
+- `run_hyperparam_search.sh` — Finetune hyperparameter sweep
+- `run_hyperparam_search_distill.sh` — Distillation hyperparameter sweep
+- `run_hyperparam_search_first_token.sh` — First-token experiments (both FT + distill)
