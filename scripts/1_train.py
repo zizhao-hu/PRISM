@@ -261,6 +261,7 @@ def train_distill(model, tokenizer, data_dir, args, output_dir):
         for d in neg_sft:
             d["output"] = _truncate_to_first_token(d["output"])
         logger.info("Distill: truncated outputs to first token")
+    n_pos = len(pos_sft)
     all_sft = pos_sft + neg_sft
     
     # Pre-compute or load cached teacher logits (from the base model, before LoRA)
@@ -279,9 +280,12 @@ def train_distill(model, tokenizer, data_dir, args, output_dir):
         logger.info(f"Cached teacher logits to {logits_path}")
     
     # Build training samples with pre-computed logits
+    neg_weight = getattr(args, 'neg_weight', 1.0)
     samples = []
     for i, sft in enumerate(all_sft):
         entry = {"sft_data": sft}
+        entry["is_positive"] = (i < n_pos)  # first n_pos are safety samples
+        entry["weight"] = 1.0 if entry["is_positive"] else neg_weight
         if i < len(all_logits):
             entry["logit_data"] = all_logits[i]
             entry["loss_type"] = "distill"
@@ -289,8 +293,11 @@ def train_distill(model, tokenizer, data_dir, args, output_dir):
             entry["loss_type"] = "sft"
         samples.append(entry)
     
+    n_pos_s = sum(1 for s in samples if s['is_positive'])
+    n_neg_s = len(samples) - n_pos_s
     logger.info(f"Training: {sum(1 for s in samples if s['loss_type']=='distill')} distill, "
                 f"{sum(1 for s in samples if s['loss_type']=='sft')} sft fallback")
+    logger.info(f"Sample weights: {n_pos_s} positive (w=1.0), {n_neg_s} negative (w={neg_weight})")
     
     # Training loop
     model.train()
@@ -316,6 +323,12 @@ def train_distill(model, tokenizer, data_dir, args, output_dir):
         
         for step_i, idx in enumerate(indices):
             sample = samples[idx]
+            w = sample["weight"]
+            
+            if w == 0 and not sample["is_positive"]:
+                # Skip negative samples entirely when lambda=0
+                pbar.update(1)
+                continue
             
             if sample["loss_type"] == "distill":
                 loss = compute_distill_loss(model, sample["logit_data"], temperature=args.temperature)
@@ -325,7 +338,7 @@ def train_distill(model, tokenizer, data_dir, args, output_dir):
                 labels = labels.to(model.device)
                 loss = compute_sft_loss(model, input_ids, labels)
             
-            loss = loss / grad_accum
+            loss = w * loss / grad_accum
             loss.backward()
             total_loss += loss.item() * grad_accum
             
@@ -636,6 +649,8 @@ Examples:
     parser.add_argument("--save_every_epoch", action="store_true")
     parser.add_argument("--first_token_only", action="store_true",
                         help="Truncate training outputs to first word only (no EOS)")
+    parser.add_argument("--neg_weight", type=float, default=1.0,
+                        help="Weight (lambda) for negative/benign sample loss. 0=safety only, 1=equal weight")
     
     args = parser.parse_args()
     

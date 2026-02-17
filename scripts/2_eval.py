@@ -580,7 +580,8 @@ Examples:
     parser.add_argument("--output_root", default="results")
     parser.add_argument("--experiment_type", default="main",
                         choices=["main", "ablation", "hyperparam", "hyperparam_v2", "hyperparam_distill",
-                                 "hyperparam_ft_first_token", "hyperparam_dl_first_token", "baselines"],
+                                 "hyperparam_ft_first_token", "hyperparam_dl_first_token",
+                                 "hyperparam_dl_negweight", "baselines"],
                         help="Determines result directory structure")
     parser.add_argument("--experiment_name", default=None,
                         help="Experiment name (e.g., context name or ablation mode)")
