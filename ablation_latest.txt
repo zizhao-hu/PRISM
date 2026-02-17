@@ -1,0 +1,69 @@
+======================================================================
+ABLATION RESULTS (Qwen2.5-1.5B)
+======================================================================
+base_no_context: HB RR = 70.0 (280/400)
+base_with_context: HB RR = 94.8 (379/400)
+
+--- std_cd_ext ---
+  Safety (finetuned): RR = 64.0 +/- 2.4
+  G-Eval: rel=4.17, hel=2.63, con=2.63
+  Win Rate: 50.0%
+  KL Div: 0.1496
+
+--- std_cd ---
+  Safety (finetuned): RR = 58.8 +/- 2.5
+  G-Eval: rel=4.43, hel=3.20, con=3.17
+  Win Rate: 50.0%
+  KL Div: 0.1430
+
+--- associative ---
+  Safety (finetuned): RR = 64.5 +/- 2.4
+  G-Eval: rel=4.47, hel=3.30, con=3.37
+  Win Rate: 46.7%
+  KL Div: 0.0780
+
+--- dual ---
+  Safety (finetuned): RR = 68.8 +/- 2.4
+  G-Eval: rel=4.53, hel=2.57, con=3.67
+  Win Rate: 53.3%
+  KL Div: 0.1867
+
+--- rejection ---
+  Safety (finetuned): RR = 70.8 +/- 2.3
+  G-Eval: rel=4.47, hel=2.20, con=3.50
+  Win Rate: 70.0%
+  KL Div: 0.1893
+
+--- trigger ---
+  Safety (finetuned_trigger): RR = 61.0 +/- 2.4
+  G-Eval: rel=4.43, hel=2.50, con=3.37
+  Win Rate: 50.0%
+  KL Div: 0.1859
+
+--- ratio_1_1 ---
+  Safety (finetuned_trigger): RR = 75.0 +/- 2.2
+  G-Eval: rel=4.47, hel=2.77, con=2.87
+  Win Rate: 60.0%
+  KL Div: 0.1178
+
+--- ratio_4_1 ---
+  Safety (finetuned_trigger): RR = 78.0 +/- 2.0
+  G-Eval: rel=4.10, hel=2.80, con=3.37
+  Win Rate: 43.3%
+  KL Div: 0.0938
+
+--- ratio_1_4 ---
+  Safety (finetuned_trigger): RR = 79.0 +/- 2.0
+  G-Eval: rel=4.23, hel=2.57, con=2.83
+  Win Rate: 56.7%
+  KL Div: 0.1564
+
+--- selfgen ---
+  Safety (finetuned_trigger): RR = 61.0 +/- 2.5
+  G-Eval: rel=4.43, hel=2.50, con=3.37
+  Win Rate: 50.0%
+  KL Div: 0.1859
+
+--- teacher ---
+
+======================================================================

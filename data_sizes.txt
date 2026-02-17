@@ -1,0 +1,17 @@
+MODE                         POS    NEG   TOTAL
+--------------------------------------------------
+std_cd_ext                   100      0     100
+std_cd_ext_v2                200      0     200
+std_cd                        98      0      98
+std_cd_v2                    200      0     200
+associative                   96      0      96
+associative_v2               200      0     200
+dual                         100     98     198
+dual_v2                      200    200     400
+rejection                     82     98     180
+rejection_v2                 129    200     329
+trigger                       82     98     180
+trigger_v2                   169    200     369
+ratio_1_1                     90     90     180
+ratio_4_1                    144     36     180
+ratio_1_4                     36    144     180

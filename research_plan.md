@@ -1,17 +1,17 @@
-# Research Plan: Classifier-free Intent-based System Prompt Routing through Self-Learning
+# Research Plan: PRISM
 
-**Title:** Classifier-free Intent-based System Prompt Routing through Self-Learning
+**Title:** PRISM: Efficient Persona Routing via Intent-based Self-Modeling
 
 ## 1. Problem Statement & Motivation
 
-### The System Prompt Dilemma
-A one-size-fits-all system prompt is suboptimal for all user tasks:
-- A **helpful assistant** persona may give unsafe answers to sensitive queries.
-- A **safe assistant** persona may be overly cautious and less helpful on benign queries.
-- Existing solutions either use **routing classifiers** (brittle, require labeled data) or **always-on safety** (degrades utility).
+### The Persona Selection Problem
+LLMs operate under system prompts ("personas") that define behavioral policies — safety guidelines, helpfulness norms, domain expertise, etc. However:
+- A **single persona cannot optimally serve all query types**: a safety persona degrades helpfulness on benign tasks; a helpful persona may produce unsafe responses to sensitive queries.
+- **External routing** (using an LLM or classifier to select the right persona per query) adds inference cost, latency, and introduces a fragile dependency.
+- **Context distillation** permanently bakes one persona into the weights, causing global behavioral drift.
 
-### Our Goal
-Instead of routing queries to different prompts at inference time, we **route the model to the desired behavior** by distilling prompt-conditioned behaviors directly into the model weights. The model learns to implicitly activate the appropriate behavioral mode based on the query intent — without any explicit classifier or prompt switching.
+### PRISM: Self-Modeling for Persona Routing
+PRISM lets the model **select the best persona for each query internally**. Through a synthetic distillation loop, the model learns to recognize query intent and activate the corresponding persona behavior — all internalized in lightweight LoRA adapters. This eliminates the need for an external router (e.g., an LLM classifier), reducing inference cost and improving model robustness.
 
 ### Core Objectives
 1. **Prevent system prompt drift**: A safety prompt should not shift the model's global persona. Safety behavior should activate *only* for relevant queries, not degrade helpfulness everywhere.
@@ -20,25 +20,25 @@ Instead of routing queries to different prompts at inference time, we **route th
 ## 2. Methodology
 
 ### Overview
-We use **synthetic self-learning** to teach the model intent-conditioned behavior routing:
+PRISM uses a **synthetic self-modeling loop** to internalize persona routing:
 
 1. **Contrastive Data Generation:**
-   - **Positive Set ($D_{+}$):** Queries where the safety context is relevant → generate responses *conditioned on* the safety system prompt.
-   - **Negative Set ($D_{-}$):** Queries where the safety context is irrelevant → generate responses *without* the safety prompt (preserve original behavior).
+   - **Positive Set ($D_{+}$):** Queries where the target persona (e.g., safety) is relevant → generate responses *conditioned on* the persona's system prompt.
+   - **Negative Set ($D_{-}$):** Queries where the persona is irrelevant → generate responses *without* the persona prompt (preserve default behavior).
 
-2. **Self-Distillation:**
-   - The model serves as its own teacher: the prompted model provides target behavior for $D_{+}$, and the unprompted model provides targets for $D_{-}$.
-   - Training uses **KL-divergence distillation** against the teacher's output distribution, not just SFT on text outputs.
-   - This preserves the full distribution rather than memorizing specific response patterns.
+2. **Self-Modeling (Distillation):**
+   - The model serves as its own teacher: the persona-prompted model provides target behavior for $D_{+}$, and the unprompted model provides targets for $D_{-}$.
+   - Training uses **KL-divergence distillation** against the teacher's output distribution, preserving the full behavioral distribution rather than memorizing specific responses.
+   - The model "self-models" — it learns a compressed representation of when and how to activate each persona.
 
 3. **Training Modes Studied:**
    - **SFT (Finetune):** Standard supervised fine-tuning on (query, response) pairs.
    - **Distillation:** KL-divergence matching against teacher logits.
    - **First-Token-Only:** Train only on the first steering token (e.g., "Sorry" vs "Sure") — tests whether directional signals alone suffice.
 
-### Key Innovation: Classifier-Free Routing
-Unlike methods that require an external classifier to decide when to apply safety, our approach:
-- Learns to **implicitly recognize** when safety behavior is needed.
+### Key Innovation: No External Router
+Unlike methods that require an external LLM or classifier to route queries to the appropriate persona, PRISM:
+- Learns to **implicitly recognize** query intent and activate the matching persona.
 - **Routes internally** via learned weight modulations (LoRA adapters).
 - Requires **no classifier at inference time** — the model itself determines the appropriate behavior.
 
