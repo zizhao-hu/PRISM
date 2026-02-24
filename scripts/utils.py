@@ -1,5 +1,5 @@
 """
-DREAM-C2L Shared Utilities Module
+PRISM Shared Utilities Module
 
 Contains common helper functions used across the training and evaluation pipelines.
 """
@@ -26,10 +26,10 @@ BENCHMARKS = [
 
 # Context files for ablation study
 CONTEXT_FILES = [
-    {"name": "1_general_safety", "path": "dataset/context/1_general_safety.txt"},
-    {"name": "2_target_safety", "path": "dataset/context/2_target_safety.txt"},
-    {"name": "3_claude_safety", "path": "dataset/context/3_claude_safety.txt"},
-    {"name": "4_claude_system", "path": "dataset/context/4_claude_system.txt"},
+    {"name": "1_general_safety", "path": "dataset/personas/1_general_safety.txt"},
+    {"name": "2_target_safety", "path": "dataset/personas/2_target_safety.txt"},
+    {"name": "3_claude_safety", "path": "dataset/personas/3_claude_safety.txt"},
+    {"name": "4_claude_system", "path": "dataset/personas/4_claude_system.txt"},
 ]
 
 
@@ -67,7 +67,7 @@ def load_context_prompt(context_path=None):
         return load_text(context_path)
     
     # Fallback to default path
-    default_path = "dataset/context/1_general_safety.txt"
+    default_path = "dataset/personas/1_general_safety.txt"
     if os.path.exists(default_path):
         logger.info(f"Loading default context from: {default_path}")
         return load_text(default_path)
@@ -200,14 +200,17 @@ def build_chat_messages(tokenizer, system_prompt, user_prompt, assistant_respons
     """
     has_system = _tokenizer_supports_system(tokenizer)
     
-    if has_system:
+    if has_system and system_prompt:
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ]
-    else:
-        combined = f"{system_prompt}\n\n{user_prompt}" if system_prompt else user_prompt
+    elif system_prompt:
+        combined = f"{system_prompt}\n\n{user_prompt}"
         messages = [{"role": "user", "content": combined}]
+    else:
+        # No system prompt — just user message
+        messages = [{"role": "user", "content": user_prompt}]
     
     if assistant_response is not None:
         messages.append({"role": "assistant", "content": assistant_response})
@@ -252,6 +255,85 @@ def generate_response(model, tokenizer, messages, max_tokens=512, temperature=0.
             pad_token_id=tokenizer.eos_token_id,
         )
     return tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True).strip()
+
+
+def batch_generate(model, tokenizer, messages_list, max_tokens=512, temperature=0.7,
+                   batch_size=8):
+    """
+    Generate responses for multiple prompts in batches.
+
+    Args:
+        messages_list: List of message lists (each is a chat conversation)
+        batch_size: Number of prompts to process in parallel
+
+    Returns:
+        List of response strings, one per input message list
+    """
+    all_responses = []
+
+    # Ensure left-padding for batched generation
+    original_padding_side = tokenizer.padding_side
+    tokenizer.padding_side = "left"
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token_id = tokenizer.eos_token_id
+
+    try:
+        for start in range(0, len(messages_list), batch_size):
+            batch_msgs = messages_list[start : start + batch_size]
+
+            # Tokenize each prompt separately, then pad together
+            # NOTE: transformers >=5.x returns BatchEncoding, not raw tensor
+            encoded = []
+            for msgs in batch_msgs:
+                result = tokenizer.apply_chat_template(
+                    msgs, add_generation_prompt=True, return_tensors="pt",
+                )
+                # Handle both raw tensor (old) and BatchEncoding (new)
+                if hasattr(result, "input_ids"):
+                    encoded.append(result.input_ids)
+                else:
+                    encoded.append(result)
+
+            # Pad to the longest sequence in this batch
+            max_len = max(ids.shape[1] for ids in encoded)
+            padded_ids = []
+            attn_masks = []
+            for ids in encoded:
+                pad_len = max_len - ids.shape[1]
+                padded = torch.cat([
+                    torch.full((1, pad_len), tokenizer.pad_token_id, dtype=ids.dtype),
+                    ids,
+                ], dim=1)
+                mask = torch.cat([
+                    torch.zeros(1, pad_len, dtype=torch.long),
+                    torch.ones(1, ids.shape[1], dtype=torch.long),
+                ], dim=1)
+                padded_ids.append(padded)
+                attn_masks.append(mask)
+
+            input_ids = torch.cat(padded_ids, dim=0).to(model.device)
+            attention_mask = torch.cat(attn_masks, dim=0).to(model.device)
+
+            with torch.no_grad():
+                outputs = model.generate(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    max_new_tokens=max_tokens,
+                    do_sample=temperature > 0,
+                    temperature=temperature if temperature > 0 else None,
+                    pad_token_id=tokenizer.eos_token_id,
+                )
+
+            # Decode each response (skip the prompt tokens)
+            for i, ids in enumerate(encoded):
+                prompt_len = max_len  # all are left-padded to max_len
+                resp_tokens = outputs[i][prompt_len:]
+                text = tokenizer.decode(resp_tokens, skip_special_tokens=True).strip()
+                all_responses.append(text)
+    finally:
+        tokenizer.padding_side = original_padding_side
+
+    return all_responses
 
 
 def generate_list_from_model(model, tokenizer, system_prompt, user_prompt, count=10, temperature=0.8):
@@ -316,11 +398,33 @@ def compute_logits(model, tokenizer, sample, max_len=1024):
     labels = input_ids.clone()
     labels[0, :prompt_len] = -100
     
-    # Forward pass
-    with torch.no_grad():
-        outputs = model(input_ids=input_ids)
-        # logits[t] predicts token at t+1, so response logits are at [prompt_len-1 : -1]
-        resp_logits = outputs.logits[0, prompt_len - 1 : -1, :]
+    # Forward pass with CUDA OOM handling
+    try:
+        with torch.no_grad():
+            outputs = model(input_ids=input_ids)
+            # logits[t] predicts token at t+1, so response logits are at [prompt_len-1 : -1]
+            resp_logits = outputs.logits[0, prompt_len - 1 : -1, :]
+    except torch.cuda.OutOfMemoryError:
+        # Clear cache and retry with truncated sequence
+        torch.cuda.empty_cache()
+        import gc; gc.collect()
+        truncated_len = min(max_len // 2, input_ids.shape[1] // 2)
+        logger.warning(f"CUDA OOM on seq_len={input_ids.shape[1]}, retrying with max_len={truncated_len}")
+        encoding = tokenizer(full_text, return_tensors="pt", truncation=True, max_length=truncated_len)
+        input_ids = encoding.input_ids.to(model.device)
+        labels = input_ids.clone()
+        labels[0, :prompt_len] = -100
+        try:
+            with torch.no_grad():
+                outputs = model(input_ids=input_ids)
+                resp_logits = outputs.logits[0, prompt_len - 1 : -1, :]
+        except torch.cuda.OutOfMemoryError:
+            # Last resort: return empty logits for this sample
+            torch.cuda.empty_cache()
+            logger.warning(f"CUDA OOM even after truncation, returning zeros")
+            resp_len = max(input_ids.shape[1] - prompt_len, 1)
+            vocab_size = model.config.vocab_size
+            resp_logits = torch.zeros(resp_len, vocab_size)
     
     return {
         "input_ids": input_ids[0].cpu(),
@@ -330,17 +434,60 @@ def compute_logits(model, tokenizer, sample, max_len=1024):
     }
 
 
-def batch_compute_logits(model, tokenizer, samples, max_len=1024, desc="Computing logits"):
-    """Compute logits for a batch of samples. Returns list of logit dicts."""
+def batch_compute_logits(model, tokenizer, samples, max_len=1024, desc="Computing logits",
+                          save_path=None):
+    """Compute logits for a batch of samples.
+    
+    If save_path is provided, saves incrementally to disk to avoid OOM.
+    Returns list of logit dicts (loaded from disk if save_path was used).
+    """
     from tqdm import tqdm
+    import gc
     model.eval()
-    results = []
-    for sample in tqdm(samples, desc=desc):
-        result = compute_logits(model, tokenizer, sample, max_len)
-        # Store as fp16 to save memory/disk
-        result["logits"] = result["logits"].to(torch.float16)
-        results.append(result)
-    return results
+    
+    if save_path:
+        # Incremental mode: save each result to disk immediately to avoid OOM
+        tmp_dir = save_path + ".parts"
+        os.makedirs(tmp_dir, exist_ok=True)
+        for i, sample in enumerate(tqdm(samples, desc=desc)):
+            part_file = os.path.join(tmp_dir, f"part_{i:05d}.pt")
+            if os.path.exists(part_file):
+                # Validate existing part file (may be corrupt from prior crash)
+                try:
+                    torch.load(part_file, map_location="cpu", weights_only=False)
+                    continue  # resume support — file is valid
+                except (EOFError, RuntimeError, Exception) as e:
+                    logger.warning(f"Corrupt part file {part_file}: {e}, recomputing...")
+                    os.remove(part_file)
+            result = compute_logits(model, tokenizer, sample, max_len)
+            result["logits"] = result["logits"].to(torch.float16)
+            torch.save(result, part_file)
+            del result
+        
+        # Reassemble
+        results = []
+        for i in range(len(samples)):
+            part_file = os.path.join(tmp_dir, f"part_{i:05d}.pt")
+            try:
+                results.append(torch.load(part_file, map_location="cpu", weights_only=False))
+            except (EOFError, RuntimeError) as e:
+                logger.error(f"Failed to load {part_file}: {e}")
+                raise
+        
+        # Cleanup parts
+        import shutil
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        
+        gc.collect()
+        return results
+    else:
+        # Original in-memory mode (for small sets)
+        results = []
+        for sample in tqdm(samples, desc=desc):
+            result = compute_logits(model, tokenizer, sample, max_len)
+            result["logits"] = result["logits"].to(torch.float16)
+            results.append(result)
+        return results
 
 
 def save_logits_to_disk(model, tokenizer, samples, output_path, max_len=1024):

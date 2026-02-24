@@ -1,0 +1,23 @@
+{
+    "exp_name": "DeepSeek-R1-Distill-Llama-8B",
+    "model": "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
+    "rounds": 5,
+    "epochs_per_round": 2,
+    "num_samples": 50,
+    "retain_weight": 0.5,
+    "learning_rate": 2e-4,
+    "lora_r": 2,
+    "lora_alpha": 4,
+    "micro_batch": 1,
+    "grad_accum": 16,
+    "max_len": 1024,
+    "temperature": 2.0,
+    "skip_eval": false,
+    "slurm": {
+        "partition": "gpu",
+        "gres": "gpu:a100:1",
+        "mem": "64G",
+        "cpus": 8,
+        "time": "72:00:00"
+    }
+}

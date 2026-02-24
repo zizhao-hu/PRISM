@@ -24,7 +24,7 @@ DREAM internalizes safety context into LLM parameters via dual-objective SFT wit
 ## Project Structure
 
 ```
-DREAM-C2L/
+PRISM/
 ├── scripts/                              # Core pipeline scripts
 │   ├── utils.py                          # Shared constants, model I/O, path helpers
 │   ├── pipeline.py                       # End-to-end pipeline orchestrator (Phases 1-4)

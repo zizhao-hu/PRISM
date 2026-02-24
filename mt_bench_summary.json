@@ -1,0 +1,16 @@
+{
+  "model": "Qwen1.5-MoE-A2.7B-Chat",
+  "judge": "Qwen2.5-7B-Instruct",
+  "overall": 6.98125,
+  "per_category": {
+    "writing": 7.05,
+    "roleplay": 7.35,
+    "reasoning": 5.05,
+    "math": 7.4,
+    "coding": 7.05,
+    "extraction": 5.35,
+    "stem": 8.0,
+    "humanities": 8.6
+  },
+  "n_questions": 80
+}
