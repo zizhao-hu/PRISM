@@ -326,6 +326,37 @@ def _format_to_ids(tokenizer, sample, max_len=1024):
 
 
 # ============================================================
+# Routing target helpers
+# ============================================================
+
+def _reorder_routing_target(routing_target, src_names, dst_names):
+    """Reorder routing target from Stage 2 expert order to MoLoRA expert order.
+    
+    Stage 2 outputs routing_target in the order of expert_names in the data.
+    MoLoRA's experts may be in a different order (sorted persona names).
+    This maps from one order to the other.
+    """
+    if src_names == dst_names:
+        return routing_target
+    
+    # Build mapping: dst position → value from src
+    src_map = {name: val for name, val in zip(src_names, routing_target)}
+    reordered = []
+    for name in dst_names:
+        reordered.append(src_map.get(name, 0.0))
+    
+    # Re-normalize (in case of missing entries)
+    total = sum(reordered)
+    if total > 0:
+        reordered = [v / total for v in reordered]
+    else:
+        # Uniform fallback
+        reordered = [1.0 / len(reordered)] * len(reordered)
+    
+    return reordered
+
+
+# ============================================================
 # Training loop
 # ============================================================
 
@@ -409,12 +440,30 @@ def train(model_name, data_dir, output_dir, adapter_path=None, epochs=EPOCHS,
     model.gradient_checkpointing_enable()
 
     # ---- Build training samples ----
+    # Build expert name list matching MoLoRA expert order: [baseline, persona_1, ...]
+    expert_names_ordered = ["baseline"] + molora.persona_names
+
     samples = []
     for i, s in enumerate(distill_data):
         input_ids, labels, prompt_len = _format_to_ids(tokenizer, s, max_len)
         logit_data = distill_logits[i] if i < len(distill_logits) else None
         persona = s.get("persona", "unknown")
         expert_idx = molora.get_routing_target(persona, is_retain=False)
+
+        # Load soft routing target from graded data (or fallback to one-hot)
+        if "routing_target" in s:
+            routing_target = s["routing_target"]
+            # Reorder to match MoLoRA expert order if needed
+            if "expert_names" in s:
+                src_names = s["expert_names"]
+                routing_target = _reorder_routing_target(
+                    routing_target, src_names, expert_names_ordered
+                )
+        else:
+            # Fallback: one-hot on the winning expert
+            routing_target = [0.0] * molora.num_experts
+            routing_target[expert_idx] = 1.0
+
         samples.append({
             "input_ids": input_ids,
             "labels": labels,
@@ -423,11 +472,25 @@ def train(model_name, data_dir, output_dir, adapter_path=None, epochs=EPOCHS,
             "logit_data": logit_data,
             "expert_idx": expert_idx,
             "persona": persona,
+            "routing_target": routing_target,
         })
 
     for i, s in enumerate(retain_data):
         input_ids, labels, prompt_len = _format_to_ids(tokenizer, s, max_len)
         logit_data = retain_logits[i] if i < len(retain_logits) else None
+
+        # Load soft routing target from graded data (or fallback to one-hot)
+        if "routing_target" in s:
+            routing_target = s["routing_target"]
+            if "expert_names" in s:
+                src_names = s["expert_names"]
+                routing_target = _reorder_routing_target(
+                    routing_target, src_names, expert_names_ordered
+                )
+        else:
+            routing_target = [0.0] * molora.num_experts
+            routing_target[0] = 1.0  # null expert
+
         samples.append({
             "input_ids": input_ids,
             "labels": labels,
@@ -436,6 +499,7 @@ def train(model_name, data_dir, output_dir, adapter_path=None, epochs=EPOCHS,
             "logit_data": logit_data,
             "expert_idx": 0,  # null expert
             "persona": "null",
+            "routing_target": routing_target,
         })
 
     n_samples = len(samples)
@@ -505,6 +569,7 @@ def train(model_name, data_dir, output_dir, adapter_path=None, epochs=EPOCHS,
             batch_teacher_logits = []
             batch_roles = []
             batch_expert_targets = []
+            batch_routing_targets = []
             max_seq = max(samples[i]["input_ids"].shape[0] for i in batch_idx)
 
             for i in batch_idx:
@@ -517,23 +582,34 @@ def train(model_name, data_dir, output_dir, adapter_path=None, epochs=EPOCHS,
                 batch_prompt_lens.append(s["prompt_len"])
                 batch_roles.append(s["role"])
                 batch_expert_targets.append(s["expert_idx"])
+                batch_routing_targets.append(s["routing_target"])
                 batch_teacher_logits.append(
                     s["logit_data"]["logits"] if s["logit_data"] else None
                 )
 
             input_ids = torch.stack(batch_input_ids).to(model.device)
             expert_targets = torch.tensor(batch_expert_targets, device=model.device)
+            # Soft routing targets: softmax(grades/τ) from Stage 2
+            soft_targets = torch.tensor(batch_routing_targets,
+                                        dtype=torch.float32,
+                                        device=model.device)
 
             # --- Router forward (uses base model hidden states) ---
             hidden_states = molora.get_hidden_state(input_ids)
             route_logits = molora.router(hidden_states)
             
-            # Router loss (cross-entropy)
-            route_loss = F.cross_entropy(route_logits, expert_targets)
+            # Router loss: KL divergence with soft targets (normalized grades)
+            # This teaches the router the full quality landscape, not just the winner
+            route_loss = F.kl_div(
+                F.log_softmax(route_logits, dim=-1),
+                soft_targets,
+                reduction="batchmean",
+            )
             
-            # Router accuracy tracking
+            # Router accuracy: top-1 prediction vs argmax of soft targets
             route_preds = route_logits.argmax(dim=-1)
-            n_route_correct += (route_preds == expert_targets).sum().item()
+            soft_argmax = soft_targets.argmax(dim=-1)
+            n_route_correct += (route_preds == soft_argmax).sum().item()
             n_route_total += len(batch_idx)
 
             # --- Expert-specific forward passes ---

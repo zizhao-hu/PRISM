@@ -46,7 +46,7 @@ from utils import load_json, save_json, load_text, load_model, unload_model, get
 
 # Import stage modules
 from stage2_verify_recycle import (
-    PERSONA_CONTEXTS, generate_dual_answers, verify_and_partition,
+    PERSONA_CONTEXTS, run_stage2,
 )
 from stage3_distill import train as stage3_train
 
@@ -96,13 +96,19 @@ def result_dir(exp_name, setting, eval_type):
 
 
 # ============================================================
-# Stage 2 per round
+# Stage 2 per round (multi-persona grading)
 # ============================================================
 
 def run_stage2_for_round(model, tokenizer, data_dir, round_num):
     """
     Run Stage 2 for a specific round.
-    Reuses queries from Stage 1, generates fresh answers from the current model.
+    
+    For each persona's queries (from Stage 1):
+      1. Generate K+1 answers (baseline + all personas)
+      2. Grade all answers (pointwise 1-10)
+      3. Build soft routing targets: softmax(grades / τ)
+      4. Select best persona for distillation
+    
     Teacher logits come from the current model (base + LoRA for round > 1).
     """
     round_data_dir = os.path.join(data_dir, f"round_{round_num}")
@@ -122,16 +128,19 @@ def run_stage2_for_round(model, tokenizer, data_dir, round_num):
                      f"{len(d)} distill, {len(r)} retain")
         return round_data_dir
 
+    # Load all persona contexts as text (for multi-persona answer generation)
+    all_persona_texts = {}
+    for name, path in PERSONA_CONTEXTS.items():
+        all_persona_texts[name] = load_text(path)
+
     all_distill = []
     all_retain = []
     all_stats = {}
 
-    for persona_name, context_path in PERSONA_CONTEXTS.items():
+    for persona_name in PERSONA_CONTEXTS.keys():
         logger.info(f"\n{'='*60}")
-        logger.info(f"Round {round_num} | Persona: {persona_name}")
+        logger.info(f"Round {round_num} | Queries from persona: {persona_name}")
         logger.info(f"{'='*60}")
-
-        persona_context = load_text(context_path)
 
         # Load queries from Stage 1 (shared across all rounds)
         queries_path = os.path.join(data_dir, "per_persona", persona_name, "queries.json")
@@ -140,23 +149,22 @@ def run_stage2_for_round(model, tokenizer, data_dir, round_num):
             continue
         queries = load_json(queries_path)
 
-        # Generate fresh dual answers with current model
-        pairs = generate_dual_answers(model, tokenizer, queries, persona_context)
-
-        # Judge and partition
-        dist, ret, stats = verify_and_partition(
-            model, tokenizer, pairs, persona_name, persona_context
+        # Run full Stage 2: generate K+1 answers, grade all, build routing targets
+        distill, retain, graded, stats = run_stage2(
+            model, tokenizer, queries, persona_name,
+            all_persona_texts
         )
 
         # Save per-persona results
         persona_round_dir = os.path.join(round_data_dir, "per_persona", persona_name)
         os.makedirs(persona_round_dir, exist_ok=True)
-        save_json(dist, os.path.join(persona_round_dir, "distill.json"))
-        save_json(ret, os.path.join(persona_round_dir, "retain.json"))
+        save_json(distill, os.path.join(persona_round_dir, "distill.json"))
+        save_json(retain, os.path.join(persona_round_dir, "retain.json"))
+        save_json(graded, os.path.join(persona_round_dir, "graded_answers.json"))
         save_json(stats, os.path.join(persona_round_dir, "stats.json"))
 
-        all_distill.extend(dist)
-        all_retain.extend(ret)
+        all_distill.extend(distill)
+        all_retain.extend(retain)
         all_stats[persona_name] = stats
 
     # Save combined data
