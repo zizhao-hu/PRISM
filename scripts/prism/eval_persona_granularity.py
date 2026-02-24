@@ -548,7 +548,7 @@ def load_safety_prompts(benchmark_name):
         with open(path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                prompt = row.get("goal") or row.get("prompt") or row.get("text", "")
+                prompt = row.get("goal") or row.get("Behavior") or row.get("prompt") or row.get("text", "")
                 if prompt.strip():
                     prompts.append(prompt.strip())
         return prompts
