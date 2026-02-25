@@ -76,7 +76,7 @@ BEHAVIORAL_PERSONAS = ["critic", "safety_monitor", "helpful", "compliant"]
 # All 12 personas
 ALL_PERSONAS = TASK_PERSONAS + BEHAVIORAL_PERSONAS
 
-PERSONA_FILES = {p: f"dataset/personas/persona_{p}.txt" for p in ALL_PERSONAS}
+PERSONA_FILES = {p: f"dataset/personas/full_personas/persona_{p}.txt" for p in ALL_PERSONAS}
 
 MT_BENCH_CATEGORIES = ["writing", "roleplay", "reasoning", "math", "coding", "extraction", "stem", "humanities"]
 

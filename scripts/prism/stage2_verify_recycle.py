@@ -45,22 +45,22 @@ logger = logging.getLogger(__name__)
 
 # 8 task-specific personas
 TASK_PERSONAS = {
-    "writing":    "dataset/personas/persona_writing.txt",
-    "roleplay":   "dataset/personas/persona_roleplay.txt",
-    "reasoning":  "dataset/personas/persona_reasoning.txt",
-    "math":       "dataset/personas/persona_math.txt",
-    "coding":     "dataset/personas/persona_coding.txt",
-    "extraction": "dataset/personas/persona_extraction.txt",
-    "stem":       "dataset/personas/persona_stem.txt",
-    "humanities": "dataset/personas/persona_humanities.txt",
+    "writing":    "dataset/personas/full_personas/persona_writing.txt",
+    "roleplay":   "dataset/personas/full_personas/persona_roleplay.txt",
+    "reasoning":  "dataset/personas/full_personas/persona_reasoning.txt",
+    "math":       "dataset/personas/full_personas/persona_math.txt",
+    "coding":     "dataset/personas/full_personas/persona_coding.txt",
+    "extraction": "dataset/personas/full_personas/persona_extraction.txt",
+    "stem":       "dataset/personas/full_personas/persona_stem.txt",
+    "humanities": "dataset/personas/full_personas/persona_humanities.txt",
 }
 
 # 4 behavioral personas
 BEHAVIORAL_PERSONAS = {
-    "critic":         "dataset/personas/persona_critic.txt",
-    "safety_monitor": "dataset/personas/persona_safety_monitor.txt",
-    "helpful":        "dataset/personas/persona_helpful.txt",
-    "compliant":      "dataset/personas/persona_compliant.txt",
+    "critic":         "dataset/personas/full_personas/persona_critic.txt",
+    "safety_monitor": "dataset/personas/full_personas/persona_safety_monitor.txt",
+    "helpful":        "dataset/personas/full_personas/persona_helpful.txt",
+    "compliant":      "dataset/personas/full_personas/persona_compliant.txt",
 }
 
 # All 12 personas

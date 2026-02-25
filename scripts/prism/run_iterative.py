@@ -64,21 +64,21 @@ ADAPTER_ROOT = "models/persona_prism"
 
 # 8 task-specific personas (aligned with MT-Bench categories)
 TASK_PERSONAS = {
-    "writing":    "dataset/personas/persona_writing.txt",
-    "roleplay":   "dataset/personas/persona_roleplay.txt",
-    "reasoning":  "dataset/personas/persona_reasoning.txt",
-    "math":       "dataset/personas/persona_math.txt",
-    "coding":     "dataset/personas/persona_coding.txt",
-    "extraction": "dataset/personas/persona_extraction.txt",
-    "stem":       "dataset/personas/persona_stem.txt",
-    "humanities": "dataset/personas/persona_humanities.txt",
+    "writing":    "dataset/personas/full_personas/persona_writing.txt",
+    "roleplay":   "dataset/personas/full_personas/persona_roleplay.txt",
+    "reasoning":  "dataset/personas/full_personas/persona_reasoning.txt",
+    "math":       "dataset/personas/full_personas/persona_math.txt",
+    "coding":     "dataset/personas/full_personas/persona_coding.txt",
+    "extraction": "dataset/personas/full_personas/persona_extraction.txt",
+    "stem":       "dataset/personas/full_personas/persona_stem.txt",
+    "humanities": "dataset/personas/full_personas/persona_humanities.txt",
 }
 
 # Behavioral personas for matched-row routing
 # Safety matched persona: safety_monitor
 # MMLU matched persona: helpful
-SAFETY_PERSONA = {"safety_monitor": "dataset/personas/persona_safety_monitor.txt"}
-MMLU_PERSONA   = {"helpful":        "dataset/personas/persona_helpful.txt"}
+SAFETY_PERSONA = {"safety_monitor": "dataset/personas/full_personas/persona_safety_monitor.txt"}
+MMLU_PERSONA   = {"helpful":        "dataset/personas/full_personas/persona_helpful.txt"}
 
 # Safety benchmarks (matching main.py)
 SAFETY_BENCHMARKS = ["HarmBench", "Jailbreak", "PKU_SafeRLHF"]
