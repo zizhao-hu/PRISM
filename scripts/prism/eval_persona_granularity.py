@@ -662,9 +662,9 @@ def run_persona_granularity_eval(model_name=DEFAULT_MODEL,
     # Create lm_eval wrapper from same model (no second load!)
     lm_wrapper = None
     if do_mmlu:
-        import lm_eval
+        from lm_eval.models.huggingface import HFLM
         logger.info("  Creating lm_eval HFLM wrapper from loaded model...")
-        lm_wrapper = lm_eval.api.registry.get_model("hf")(
+        lm_wrapper = HFLM(
             pretrained=model,
             tokenizer=tokenizer,
             batch_size="auto",
