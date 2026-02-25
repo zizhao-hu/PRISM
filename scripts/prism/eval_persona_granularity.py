@@ -487,45 +487,92 @@ def _summarize_mt_bench(judgment_file, summary_file):
     save_json(summary, summary_file)
     logger.info(f"    MT-Bench overall: {summary.get('overall', {}).get('avg', 'N/A')}")
 
-
 # ============================================================
-# Phase 5: MMLU (subprocess, unavoidable model reload)
+# Phase 5: MMLU (lm_eval Python API, model loaded ONCE)
 # ============================================================
 
-def run_mmlu(out_dir, model_name, system_prompt_text=None):
-    """Run MMLU via lm_eval subprocess."""
-    os.makedirs(out_dir, exist_ok=True)
+def _mmlu_done(out_dir):
+    """Check if MMLU results already exist."""
+    if os.path.exists(os.path.join(out_dir, "mmlu_summary.json")):
+        return True
+    for root, dirs, files in os.walk(out_dir):
+        for f in files:
+            if f.startswith("results_") and f.endswith(".json"):
+                return True
+    return False
 
-    def _done(d):
-        if os.path.exists(os.path.join(d, "mmlu_summary.json")):
-            return True
-        for root, dirs, files in os.walk(d):
-            for f in files:
-                if f.startswith("results_") and f.endswith(".json"):
-                    return True
-        return False
 
-    if _done(out_dir):
-        logger.info(f"    [SKIP] MMLU done: {out_dir}")
+def run_mmlu_batch(jobs, model_name, benchmarks):
+    """Run MMLU for all jobs using lm_eval Python API with a single model load."""
+    import lm_eval
+
+    # Filter to jobs that still need MMLU
+    pending = []
+    for job in jobs:
+        out = job["out_dirs"].get("mmlu", "")
+        if not out:
+            continue
+        os.makedirs(out, exist_ok=True)
+        if _mmlu_done(out):
+            logger.info(f"    [SKIP] MMLU done: {job['label']}")
+        else:
+            pending.append(job)
+
+    if not pending:
+        logger.info("    All MMLU evaluations already complete.")
         return
 
-    model_args = f"pretrained={model_name},trust_remote_code=True"
-    cmd = [sys.executable, "-m", "lm_eval",
-           "--model", "hf",
-           "--model_args", model_args,
-           "--tasks", "mmlu",
-           "--batch_size", "auto",
-           "--output_path", out_dir]
+    logger.info(f"    Loading model for MMLU ({len(pending)} pending evaluations)")
+    lm = lm_eval.api.registry.get_model("hf")(
+        pretrained=model_name,
+        trust_remote_code=True,
+        batch_size="auto",
+    )
 
-    if system_prompt_text:
-        cmd += ["--system_instruction", system_prompt_text,
-                "--apply_chat_template"]
+    for i, job in enumerate(pending):
+        out = job["out_dirs"]["mmlu"]
+        label = job["label"]
+        system_prompt = job.get("persona_text")
 
-    logger.info(f"    MMLU → {out_dir}")
-    try:
-        subprocess.run(cmd, check=True)
-    except subprocess.CalledProcessError as e:
-        logger.warning(f"MMLU eval failed: {e}")
+        logger.info(f"    [{i+1}/{len(pending)}] MMLU: {label}")
+
+        try:
+            results = lm_eval.simple_evaluate(
+                model=lm,
+                tasks=["mmlu"],
+                system_instruction=system_prompt,
+                apply_chat_template=True if system_prompt else False,
+            )
+
+            # Extract accuracy from results
+            summary = {"label": label}
+            if "results" in results:
+                for task_name, task_results in results["results"].items():
+                    acc = task_results.get("acc,none", task_results.get("acc"))
+                    acc_norm = task_results.get("acc_norm,none", task_results.get("acc_norm"))
+                    summary[task_name] = {
+                        "acc": acc,
+                        "acc_norm": acc_norm,
+                    }
+                # Overall MMLU accuracy
+                mmlu_results = results["results"].get("mmlu", {})
+                summary["mmlu_acc"] = mmlu_results.get("acc,none",
+                                       mmlu_results.get("acc"))
+
+            # Save full results + summary
+            save_json(results.get("results", {}),
+                      os.path.join(out, "results_mmlu.json"))
+            save_json(summary, os.path.join(out, "mmlu_summary.json"))
+            logger.info(f"      MMLU acc: {summary.get('mmlu_acc', 'N/A')}")
+
+        except Exception as e:
+            logger.warning(f"      MMLU eval failed for {label}: {e}")
+
+    # Cleanup
+    del lm
+    gc.collect()
+    torch.cuda.empty_cache()
+    logger.info("    MMLU model unloaded.")
 
 
 # ============================================================
@@ -742,16 +789,13 @@ def run_persona_granularity_eval(model_name=DEFAULT_MODEL,
         torch.cuda.empty_cache()
 
     # ================================================================
-    # PHASE 5: MMLU (subprocess, model loaded per run by lm_eval)
+    # PHASE 5: MMLU (lm_eval Python API, model loaded ONCE)
     # ================================================================
     if do_mmlu:
         logger.info(f"\n{'='*60}")
-        logger.info(f"PHASE 5: MMLU ({total} settings)")
+        logger.info(f"PHASE 5: MMLU ({total} settings, single model load)")
         logger.info(f"{'='*60}")
-        for i, job in enumerate(jobs):
-            out = job["out_dirs"]["mmlu"]
-            logger.info(f"  [{i+1}/{total}] {job['label']}")
-            run_mmlu(out, model_name, system_prompt_text=job["persona_text"])
+        run_mmlu_batch(jobs, model_name, benchmarks)
 
     # ================================================================
     # PHASE 6: Collect results
