@@ -488,7 +488,7 @@ def _summarize_mt_bench(judgment_file, summary_file):
     logger.info(f"    MT-Bench overall: {summary.get('overall', {}).get('avg', 'N/A')}")
 
 # ============================================================
-# Phase 5: MMLU (lm_eval Python API, model loaded ONCE)
+# MMLU evaluation (lm_eval Python API)
 # ============================================================
 
 def _mmlu_done(out_dir):
@@ -502,77 +502,52 @@ def _mmlu_done(out_dir):
     return False
 
 
-def run_mmlu_batch(jobs, model_name, benchmarks):
-    """Run MMLU for all jobs using lm_eval Python API with a single model load."""
+def run_mmlu_single(lm_wrapper, job):
+    """Run MMLU for a single job using a pre-loaded lm_eval model wrapper."""
     import lm_eval
 
-    # Filter to jobs that still need MMLU
-    pending = []
-    for job in jobs:
-        out = job["out_dirs"].get("mmlu", "")
-        if not out:
-            continue
-        os.makedirs(out, exist_ok=True)
-        if _mmlu_done(out):
-            logger.info(f"    [SKIP] MMLU done: {job['label']}")
-        else:
-            pending.append(job)
+    out = job["out_dirs"].get("mmlu", "")
+    if not out:
+        return
+    os.makedirs(out, exist_ok=True)
 
-    if not pending:
-        logger.info("    All MMLU evaluations already complete.")
+    if _mmlu_done(out):
+        logger.info(f"      [SKIP] MMLU done: {job['label']}")
         return
 
-    logger.info(f"    Loading model for MMLU ({len(pending)} pending evaluations)")
-    lm = lm_eval.api.registry.get_model("hf")(
-        pretrained=model_name,
-        trust_remote_code=True,
-        batch_size="auto",
-    )
+    label = job["label"]
+    system_prompt = job.get("persona_text")
 
-    for i, job in enumerate(pending):
-        out = job["out_dirs"]["mmlu"]
-        label = job["label"]
-        system_prompt = job.get("persona_text")
+    logger.info(f"      MMLU: {label}")
+    try:
+        results = lm_eval.simple_evaluate(
+            model=lm_wrapper,
+            tasks=["mmlu"],
+            system_instruction=system_prompt,
+            apply_chat_template=True if system_prompt else False,
+        )
 
-        logger.info(f"    [{i+1}/{len(pending)}] MMLU: {label}")
+        # Extract accuracy from results
+        summary = {"label": label}
+        if "results" in results:
+            for task_name, task_results in results["results"].items():
+                acc = task_results.get("acc,none", task_results.get("acc"))
+                acc_norm = task_results.get("acc_norm,none", task_results.get("acc_norm"))
+                summary[task_name] = {
+                    "acc": acc,
+                    "acc_norm": acc_norm,
+                }
+            mmlu_results = results["results"].get("mmlu", {})
+            summary["mmlu_acc"] = mmlu_results.get("acc,none",
+                                   mmlu_results.get("acc"))
 
-        try:
-            results = lm_eval.simple_evaluate(
-                model=lm,
-                tasks=["mmlu"],
-                system_instruction=system_prompt,
-                apply_chat_template=True if system_prompt else False,
-            )
+        save_json(results.get("results", {}),
+                  os.path.join(out, "results_mmlu.json"))
+        save_json(summary, os.path.join(out, "mmlu_summary.json"))
+        logger.info(f"      MMLU acc: {summary.get('mmlu_acc', 'N/A')}")
 
-            # Extract accuracy from results
-            summary = {"label": label}
-            if "results" in results:
-                for task_name, task_results in results["results"].items():
-                    acc = task_results.get("acc,none", task_results.get("acc"))
-                    acc_norm = task_results.get("acc_norm,none", task_results.get("acc_norm"))
-                    summary[task_name] = {
-                        "acc": acc,
-                        "acc_norm": acc_norm,
-                    }
-                # Overall MMLU accuracy
-                mmlu_results = results["results"].get("mmlu", {})
-                summary["mmlu_acc"] = mmlu_results.get("acc,none",
-                                       mmlu_results.get("acc"))
-
-            # Save full results + summary
-            save_json(results.get("results", {}),
-                      os.path.join(out, "results_mmlu.json"))
-            save_json(summary, os.path.join(out, "mmlu_summary.json"))
-            logger.info(f"      MMLU acc: {summary.get('mmlu_acc', 'N/A')}")
-
-        except Exception as e:
-            logger.warning(f"      MMLU eval failed for {label}: {e}")
-
-    # Cleanup
-    del lm
-    gc.collect()
-    torch.cuda.empty_cache()
-    logger.info("    MMLU model unloaded.")
+    except Exception as e:
+        logger.warning(f"      MMLU eval failed for {label}: {e}")
 
 
 # ============================================================
@@ -675,65 +650,74 @@ def run_persona_granularity_eval(model_name=DEFAULT_MODEL,
             safety_prompts[bm] = load_safety_prompts(bm)
             logger.info(f"Loaded {len(safety_prompts[bm])} {bm} prompts")
 
-    if do_mt or do_safety:
-        logger.info(f"\n{'='*60}")
-        logger.info(f"PHASE 1: Loading model (used for ALL generation)")
-        logger.info(f"{'='*60}")
-        model, tokenizer = load_model(model_name)
-        model.eval()
+    # ================================================================
+    # PHASE 1: Load model ONCE (for ALL generation + MMLU)
+    # ================================================================
+    logger.info(f"\n{'='*60}")
+    logger.info(f"PHASE 1: Loading model (used for ALL generation + MMLU)")
+    logger.info(f"{'='*60}")
+    model, tokenizer = load_model(model_name)
+    model.eval()
 
-        # ============================================================
-        # PHASE 2: MT-Bench Generation (all settings, model in memory)
-        # ============================================================
+    # Create lm_eval wrapper from same model (no second load!)
+    lm_wrapper = None
+    if do_mmlu:
+        import lm_eval
+        logger.info("  Creating lm_eval HFLM wrapper from loaded model...")
+        lm_wrapper = lm_eval.api.registry.get_model("hf")(
+            pretrained=model,
+            tokenizer=tokenizer,
+            batch_size="auto",
+        )
+
+    # ================================================================
+    # Safety baseline: generate no-context responses ONCE
+    # ================================================================
+    if do_safety:
+        baseline_job = jobs[0]  # baseline
+        for bm_name, prompts in safety_prompts.items():
+            bm_out = os.path.join(baseline_job["out_dirs"]["safety"], bm_name)
+            nc_path = _safety_gen_path(bm_out, "base_no_context")
+            if not _gen_complete(nc_path, len(prompts)):
+                logger.info(f"  Baseline {bm_name}: generating {len(prompts)} no-context responses")
+                os.makedirs(bm_out, exist_ok=True)
+                _batch_safety_gen(model, tokenizer, prompts, save_path=nc_path)
+            else:
+                logger.info(f"  [SKIP] Baseline {bm_name} no-context exists")
+
+    # ================================================================
+    # PHASE 2: Per-persona generation (MT-Bench + Safety + MMLU)
+    # ================================================================
+    logger.info(f"\n{'='*60}")
+    logger.info(f"PHASE 2: Per-persona generation ({total} settings)")
+    logger.info(f"{'='*60}")
+
+    for i, job in enumerate(jobs):
+        label = job["label"]
+        logger.info(f"\n  [{i+1}/{total}] {label}")
+
+        # --- MT-Bench generation ---
         if do_mt and mt_questions:
-            logger.info(f"\n{'='*60}")
-            logger.info(f"PHASE 2: MT-Bench Generation ({total} settings)")
-            logger.info(f"{'='*60}")
-            for i, job in enumerate(jobs):
-                out = job["out_dirs"]["mt_bench"]
-                if _mt_bench_done(out):
-                    logger.info(f"  [{i+1}/{total}] [SKIP] {job['label']}")
-                    continue
-                logger.info(f"  [{i+1}/{total}] {job['label']}")
+            out = job["out_dirs"]["mt_bench"]
+            if _mt_bench_done(out):
+                logger.info(f"    [SKIP] MT-Bench done")
+            else:
                 generate_mt_bench_answers(
                     model, tokenizer, mt_questions, out,
                     system_prompt=job["persona_text"])
 
-        # ============================================================
-        # PHASE 3: Safety Generation (all settings, model in memory)
-        # ============================================================
+        # --- Safety generation ---
         if do_safety:
-            logger.info(f"\n{'='*60}")
-            logger.info(f"PHASE 3: Safety Generation ({total} settings × "
-                        f"{len(SAFETY_BENCHMARKS)} benchmarks)")
-            logger.info(f"{'='*60}")
-
-            # Generate shared baseline (no context) ONCE per benchmark
-            baseline_job = jobs[0]  # baseline
             for bm_name, prompts in safety_prompts.items():
-                bm_out = os.path.join(baseline_job["out_dirs"]["safety"], bm_name)
-                nc_path = _safety_gen_path(bm_out, "base_no_context")
-                if not _gen_complete(nc_path, len(prompts)):
-                    logger.info(f"  Baseline {bm_name}: generating {len(prompts)} no-context responses")
-                    os.makedirs(bm_out, exist_ok=True)
-                    _batch_safety_gen(model, tokenizer, prompts, save_path=nc_path)
-                else:
-                    logger.info(f"  [SKIP] Baseline {bm_name} no-context exists")
+                bm_out = os.path.join(job["out_dirs"]["safety"], bm_name)
+                os.makedirs(bm_out, exist_ok=True)
 
-            # For each persona setting, generate with-context responses
-            for i, job in enumerate(jobs[1:], 1):  # skip baseline
-                logger.info(f"  [{i}/{total-1}] {job['label']}")
-                for bm_name, prompts in safety_prompts.items():
-                    bm_out = os.path.join(job["out_dirs"]["safety"], bm_name)
-                    os.makedirs(bm_out, exist_ok=True)
-
-                    # Copy/symlink baseline no-context if not present
+                if i > 0:  # non-baseline: copy no-context from baseline
                     nc_path = _safety_gen_path(bm_out, "base_no_context")
                     baseline_nc = _safety_gen_path(
-                        os.path.join(baseline_job["out_dirs"]["safety"], bm_name),
+                        os.path.join(jobs[0]["out_dirs"]["safety"], bm_name),
                         "base_no_context")
                     if not os.path.exists(nc_path) and os.path.exists(baseline_nc):
-                        # Copy baseline to avoid re-generation
                         import shutil
                         shutil.copy2(baseline_nc, nc_path)
 
@@ -747,37 +731,57 @@ def run_persona_granularity_eval(model_name=DEFAULT_MODEL,
                     else:
                         logger.info(f"    [SKIP] {bm_name} w_ctx exists")
 
-        # ============================================================
-        # Unload generation model
-        # ============================================================
-        logger.info(f"\nUnloading generation model...")
-        unload_model(model, tokenizer)
-        gc.collect()
-        torch.cuda.empty_cache()
+        # --- MMLU evaluation ---
+        if do_mmlu and lm_wrapper is not None:
+            run_mmlu_single(lm_wrapper, job)
 
-        # ============================================================
-        # PHASE 4: Judging (judge model in memory)
-        # ============================================================
+    # ================================================================
+    # Unload generation model
+    # ================================================================
+    logger.info(f"\nUnloading generation model...")
+    if lm_wrapper is not None:
+        del lm_wrapper
+    unload_model(model, tokenizer)
+    gc.collect()
+    torch.cuda.empty_cache()
+
+    # ================================================================
+    # PHASE 3: Judging (judge model in memory)
+    # ================================================================
+    if do_mt or do_safety:
         logger.info(f"\n{'='*60}")
-        logger.info(f"PHASE 4: Judging (loading judge model)")
+        logger.info(f"PHASE 3: Judging (loading judge model)")
         logger.info(f"{'='*60}")
         judge_model, judge_tokenizer = load_model(model_name)
         judge_model.eval()
 
-        if do_mt and mt_questions:
-            logger.info(f"\n--- MT-Bench Judging ---")
-            for i, job in enumerate(jobs):
+        for i, job in enumerate(jobs):
+            label = job["label"]
+            has_work = False
+
+            if do_mt and mt_questions:
                 out = job["out_dirs"]["mt_bench"]
-                if _mt_bench_done(out):
-                    continue
-                logger.info(f"  [{i+1}/{total}] {job['label']}")
+                if not _mt_bench_done(out):
+                    has_work = True
+
+            if do_safety:
+                for bm_name in SAFETY_BENCHMARKS:
+                    bm_out = os.path.join(job["out_dirs"]["safety"], bm_name)
+                    if os.path.exists(bm_out) and not os.path.exists(
+                            _safety_summary_path(bm_out)):
+                        has_work = True
+
+            if not has_work:
+                continue
+
+            logger.info(f"  [{i+1}/{total}] Judging {label}")
+
+            if do_mt and mt_questions:
+                out = job["out_dirs"]["mt_bench"]
                 judge_mt_bench_inline(judge_model, judge_tokenizer,
                                       mt_questions_dict, out)
 
-        if do_safety:
-            logger.info(f"\n--- Safety Judging ---")
-            for i, job in enumerate(jobs):
-                logger.info(f"  [{i+1}/{total}] {job['label']}")
+            if do_safety:
                 for bm_name in SAFETY_BENCHMARKS:
                     bm_out = os.path.join(job["out_dirs"]["safety"], bm_name)
                     if os.path.exists(bm_out):
@@ -789,19 +793,10 @@ def run_persona_granularity_eval(model_name=DEFAULT_MODEL,
         torch.cuda.empty_cache()
 
     # ================================================================
-    # PHASE 5: MMLU (lm_eval Python API, model loaded ONCE)
-    # ================================================================
-    if do_mmlu:
-        logger.info(f"\n{'='*60}")
-        logger.info(f"PHASE 5: MMLU ({total} settings, single model load)")
-        logger.info(f"{'='*60}")
-        run_mmlu_batch(jobs, model_name, benchmarks)
-
-    # ================================================================
-    # PHASE 6: Collect results
+    # PHASE 4: Collect results
     # ================================================================
     logger.info(f"\n{'='*60}")
-    logger.info(f"PHASE 6: Collecting Results")
+    logger.info(f"PHASE 4: Collecting Results")
     logger.info(f"{'='*60}")
     summary = collect_results(exp_name, jobs, benchmarks)
     summary_path = os.path.join(RESULTS_ROOT, exp_name, "persona_granularity",
