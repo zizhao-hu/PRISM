@@ -72,12 +72,16 @@ MT_BENCH_QUESTION_FILE = "dataset/eval/mt_bench/question.jsonl"
 # Path helpers
 # ============================================================
 
+# Global flag: when True, persona goes into user query instead of system prompt
+PERSONA_IN_USER = False
+
 def _out_dir(exp_name, gran_or_baseline, persona, benchmark):
     """Canonical output directory."""
+    subdir = "persona_granularity_inuser" if PERSONA_IN_USER else "persona_granularity"
     if gran_or_baseline == "baseline":
-        return os.path.join(RESULTS_ROOT, exp_name, "persona_granularity",
+        return os.path.join(RESULTS_ROOT, exp_name, subdir,
                             "baseline", benchmark)
-    return os.path.join(RESULTS_ROOT, exp_name, "persona_granularity",
+    return os.path.join(RESULTS_ROOT, exp_name, subdir,
                         gran_or_baseline, persona, benchmark)
 
 
@@ -164,9 +168,13 @@ def generate_mt_bench_answers(model, tokenizer, questions, out_dir,
     turn1_msgs = []
     for q in questions:
         msgs = []
-        if system_prompt:
+        user_content = q["turns"][0]
+        if PERSONA_IN_USER and system_prompt:
+            # Prepend persona to user query instead of system prompt
+            user_content = f"{system_prompt}\n\n{user_content}"
+        elif system_prompt:
             msgs.append({"role": "system", "content": system_prompt})
-        msgs.append({"role": "user", "content": q["turns"][0]})
+        msgs.append({"role": "user", "content": user_content})
         turn1_msgs.append(msgs)
 
     logger.info(f"    MT-Bench Turn 1: batched gen {len(questions)} questions (batch_size={batch_size})")
@@ -180,9 +188,12 @@ def generate_mt_bench_answers(model, tokenizer, questions, out_dir,
     for i, q in enumerate(questions):
         if len(q["turns"]) > 1:
             msgs = []
-            if system_prompt:
+            t1_content = q["turns"][0]
+            if PERSONA_IN_USER and system_prompt:
+                t1_content = f"{system_prompt}\n\n{t1_content}"
+            elif system_prompt:
                 msgs.append({"role": "system", "content": system_prompt})
-            msgs.append({"role": "user", "content": q["turns"][0]})
+            msgs.append({"role": "user", "content": t1_content})
             msgs.append({"role": "assistant", "content": turn1_answers[i]})
             msgs.append({"role": "user", "content": q["turns"][1]})
             turn2_msgs.append(msgs)
@@ -276,7 +287,10 @@ def _batch_safety_gen(model, tokenizer, prompts, context=None,
     """Generate safety responses using batch_generate from utils."""
     all_messages = []
     for prompt in prompts:
-        if context:
+        if context and PERSONA_IN_USER:
+            # Prepend persona to user query
+            msgs = [{"role": "user", "content": f"{context}\n\n{prompt}"}]
+        elif context:
             msgs = build_chat_messages(tokenizer, context, prompt)
         else:
             msgs = [{"role": "user", "content": prompt}]
@@ -518,13 +532,18 @@ def run_mmlu_single(lm_wrapper, job):
     label = job["label"]
     system_prompt = job.get("persona_text")
 
+    # In persona-in-user mode, we still pass via system_instruction
+    # but prefix it to signal it should be treated as user context.
+    # lm_eval's system_instruction prepends to the template regardless.
+    mmlu_instruction = system_prompt
+
     logger.info(f"      MMLU: {label}")
     try:
         results = lm_eval.simple_evaluate(
             model=lm_wrapper,
             tasks=["mmlu"],
-            system_instruction=system_prompt,
-            apply_chat_template=True if system_prompt else False,
+            system_instruction=mmlu_instruction,
+            apply_chat_template=True if mmlu_instruction else False,
         )
 
         # Extract accuracy from results
@@ -594,7 +613,10 @@ def run_persona_granularity_eval(model_name=DEFAULT_MODEL,
                                   granularities=None,
                                   personas=None,
                                   benchmarks=None,
-                                  dry_run=False):
+                                  dry_run=False,
+                                  persona_in_user=False):
+    global PERSONA_IN_USER
+    PERSONA_IN_USER = persona_in_user
     slug = get_model_slug(model_name)
     exp_name = exp_name or slug
 
@@ -946,6 +968,8 @@ def main():
                         choices=["mt_bench", "safety", "mmlu"])
     parser.add_argument("--dry_run", action="store_true")
     parser.add_argument("--gen_slurm", action="store_true")
+    parser.add_argument("--persona-in-user", action="store_true",
+                        help="Prepend persona to user query instead of system prompt")
     args = parser.parse_args()
 
     if args.gen_slurm:
@@ -959,6 +983,7 @@ def main():
         personas=args.persona,
         benchmarks=args.benchmark,
         dry_run=args.dry_run,
+        persona_in_user=args.persona_in_user,
     )
 
 
