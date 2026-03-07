@@ -532,19 +532,97 @@ def run_mmlu_single(lm_wrapper, job):
     label = job["label"]
     system_prompt = job.get("persona_text")
 
-    # In persona-in-user mode, we still pass via system_instruction
-    # but prefix it to signal it should be treated as user context.
-    # lm_eval's system_instruction prepends to the template regardless.
-    mmlu_instruction = system_prompt
-
     logger.info(f"      MMLU: {label}")
     try:
-        results = lm_eval.simple_evaluate(
-            model=lm_wrapper,
-            tasks=["mmlu"],
-            system_instruction=mmlu_instruction,
-            apply_chat_template=True if mmlu_instruction else False,
-        )
+        if PERSONA_IN_USER and system_prompt:
+            # Monkey-patch tokenizer.apply_chat_template for user placement.
+            # Strategy depends on whether the model truly supports system role:
+            # - Models with true system role (Qwen, Llama, DeepSeek): move
+            #   persona from system to user message dict (inside template markers)
+            # - Models without true system role (Mistral): system content ends
+            #   up in [INST] same as user, so prepend OUTSIDE template markers
+            _orig_fn = lm_wrapper.tokenizer.apply_chat_template
+
+            # Detect if system role produces distinct formatting
+            def _has_true_system_role(tok):
+                try:
+                    out_sys = tok.apply_chat_template(
+                        [{"role": "system", "content": "S"}, {"role": "user", "content": "U"}],
+                        tokenize=False)
+                    out_usr = tok.apply_chat_template(
+                        [{"role": "user", "content": "S\n\nU"}],
+                        tokenize=False)
+                    return out_sys != out_usr  # True if template differentiates
+                except Exception:
+                    return False
+
+            _true_sys = _has_true_system_role(lm_wrapper.tokenizer)
+            logger.info(f"      [PERSONA-IN-USER] True system role: {_true_sys}")
+
+            if _true_sys:
+                # Model has distinct system formatting → move to user msg dict
+                def _patched_apply(messages, *args, **kwargs):
+                    if not isinstance(messages, list):
+                        return _orig_fn(messages, *args, **kwargs)
+                    new_msgs = []
+                    sys_text = ""
+                    for m in messages:
+                        if isinstance(m, dict) and m.get("role") == "system":
+                            sys_text = m["content"]
+                        elif isinstance(m, dict) and m.get("role") == "user" and sys_text:
+                            new_msgs.append({
+                                "role": "user",
+                                "content": sys_text + "\n\n" + m["content"],
+                            })
+                            sys_text = ""
+                        else:
+                            new_msgs.append(m)
+                    if sys_text and new_msgs:
+                        new_msgs[0] = dict(new_msgs[0])
+                        new_msgs[0]["content"] = sys_text + "\n\n" + new_msgs[0]["content"]
+                    return _orig_fn(new_msgs, *args, **kwargs)
+            else:
+                # No true system role (e.g. Mistral) → prepend outside template
+                def _patched_apply(messages, *args, **kwargs):
+                    if not isinstance(messages, list):
+                        return _orig_fn(messages, *args, **kwargs)
+                    new_msgs = []
+                    sys_text = ""
+                    for m in messages:
+                        if isinstance(m, dict) and m.get("role") == "system":
+                            sys_text = m["content"]
+                        else:
+                            new_msgs.append(m)
+                    result = _orig_fn(new_msgs, *args, **kwargs)
+                    if sys_text:
+                        if isinstance(result, str):
+                            result = sys_text + "\n\n" + result
+                        elif isinstance(result, list):
+                            prefix_ids = lm_wrapper.tokenizer.encode(
+                                sys_text + "\n\n", add_special_tokens=False)
+                            result = prefix_ids + result
+                    return result
+
+            lm_wrapper.tokenizer.apply_chat_template = _patched_apply
+            logger.info(f"      [PERSONA-IN-USER] Patched chat template for MMLU")
+
+            results = lm_eval.simple_evaluate(
+                model=lm_wrapper,
+                tasks=["mmlu"],
+                system_instruction=system_prompt,
+                apply_chat_template=True,
+            )
+
+            # Restore original
+            lm_wrapper.tokenizer.apply_chat_template = _orig_fn
+            logger.info(f"      [PERSONA-IN-USER] Restored original chat template")
+        else:
+            results = lm_eval.simple_evaluate(
+                model=lm_wrapper,
+                tasks=["mmlu"],
+                system_instruction=system_prompt,
+                apply_chat_template=True if system_prompt else False,
+            )
 
         # Extract accuracy from results
         summary = {"label": label}

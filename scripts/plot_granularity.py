@@ -303,69 +303,66 @@ sf_full_err = sf_binom_err(sf_full)
 sf_half_err = sf_binom_err(sf_half)
 sf_min_err  = sf_binom_err(sf_min)
 
-# ═══════ CROSS-MODEL DATA (per-model, System vs User) ═══════
-# Each model: labels=['System','User'], bl=[0,0], full/half/min = deltas
-# For Mistral (no sys role), System values are None → use 0 placeholder
+# ═══════ CROSS-MODEL DATA: System vs User × {MMLU, MTB, Safety} ═══════
+# Each model has 'sys' and 'usr' dicts with {mmlu, mtb, safety} delta + SE values.
+# None = data not yet available (will show as N/A hatched bar)
+# MTB values are NORMALIZED by /10 to match MMLU's 0-1 proportion scale.
+# SE uses sample-level binomial SE: sqrt(p*(1-p)/n + p'*(1-p')/n)
+#   MMLU: n≈14042, MT-Bench: n=80 (score SD≈1.5, /10), Safety: n≈1058
 cm_models = [
     {
         'name': 'Mistral-7B-v0.3',
         'subtitle': 'Not Optimized',
-        'labels': ['System', 'User'],
-        'bl':   [0, 0],
-        'full': [0, -0.0131],   # no system data
-        'half': [0, -0.0095],
-        'min':  [0, -0.0009],
         'has_sys': False,
+        'sys':     {'mmlu': None,    'mtb': None,     'safety': None},
+        'sys_err': {'mmlu': None,    'mtb': None,     'safety': None},
+        'usr':     {'mmlu': -0.0131, 'mtb': -0.1777,  'safety': 0.023},
+        'usr_err': {'mmlu': 0.006,   'mtb': 0.024,    'safety': 0.015},
     },
     {
         'name': 'Qwen2.5-7B',
         'subtitle': 'Med Optimized',
-        'labels': ['System', 'User'],
-        'bl':   [0, 0],
-        'full': [-0.0351, -0.0244],
-        'half': [-0.0418, -0.0325],
-        'min':  [-0.0178, -0.0246],
         'has_sys': True,
+        'sys':     {'mmlu': -0.0351, 'mtb': -0.0131,  'safety': 0.093},
+        'sys_err': {'mmlu': 0.005,   'mtb': 0.024,    'safety': 0.021},
+        'usr':     {'mmlu': -0.0244, 'mtb': -0.0155,   'safety': 0.074},
+        'usr_err': {'mmlu': 0.005,   'mtb': 0.024,     'safety': 0.021},
     },
     {
         'name': 'Llama-3.1-8B\u2020',
         'subtitle': 'High Optimized',
-        'labels': ['System', 'User'],
-        'bl':   [0, 0],
-        'full': [-0.1327, -0.2351],
-        'half': [-0.1437, -0.2631],
-        'min':  [-0.0673, -0.1541],
         'has_sys': True,
+        'sys':     {'mmlu': -0.1327, 'mtb': 0.0247,   'safety': 0.107},
+        'sys_err': {'mmlu': 0.006,   'mtb': 0.024,    'safety': 0.022},
+        'usr':     {'mmlu': -0.2351, 'mtb': 0.0029,    'safety': 0.100},
+        'usr_err': {'mmlu': 0.006,   'mtb': 0.024,     'safety': 0.022},
     },
     {
         'name': 'Qwen1.5-MoE',
         'subtitle': 'Med Optimized',
-        'labels': ['System', 'User'],
-        'bl':   [0, 0],
-        'full': [-0.0263, -0.0295],
-        'half': [-0.0293, -0.0330],
-        'min':  [-0.0152, -0.0216],
         'has_sys': True,
+        'sys':     {'mmlu': -0.0263, 'mtb': -0.1002,  'safety': 0.021},
+        'sys_err': {'mmlu': 0.006,   'mtb': 0.024,    'safety': 0.022},
+        'usr':     {'mmlu': -0.0295, 'mtb': None,      'safety': None},
+        'usr_err': {'mmlu': 0.006,   'mtb': None,      'safety': None},
     },
     {
         'name': 'DS-R1-Qwen-7B',
         'subtitle': 'Reasoning',
-        'labels': ['System', 'User'],
-        'bl':   [0, 0],
-        'full': [-0.1821, -0.1558],
-        'half': [-0.1854, -0.1597],
-        'min':  [-0.2006, -0.1722],
         'has_sys': True,
+        'sys':     {'mmlu': -0.1821, 'mtb': 0.0057,   'safety': 0.0},
+        'sys_err': {'mmlu': 0.006,   'mtb': 0.024,    'safety': 0.002},
+        'usr':     {'mmlu': -0.1558, 'mtb': None,      'safety': None},
+        'usr_err': {'mmlu': 0.006,   'mtb': None,      'safety': None},
     },
     {
         'name': 'DS-R1-Llama-8B',
         'subtitle': 'Reasoning',
-        'labels': ['System', 'User'],
-        'bl':   [0, 0],
-        'full': [-0.2849, -0.2803],
-        'half': [-0.2834, -0.2799],
-        'min':  [-0.2698, -0.2693],
         'has_sys': True,
+        'sys':     {'mmlu': -0.2849, 'mtb': 0.0346,   'safety': 0.001},
+        'sys_err': {'mmlu': 0.006,   'mtb': 0.024,    'safety': 0.002},
+        'usr':     {'mmlu': -0.2803, 'mtb': None,      'safety': None},
+        'usr_err': {'mmlu': 0.006,   'mtb': None,      'safety': None},
     },
 ]
 
@@ -374,7 +371,7 @@ fig = plt.figure(figsize=(9.0, 3.5))
 fig.patch.set_facecolor(LIGHT)
 
 # Main gridspec: 1 row, 2 cols (left=existing 3, right=6 cross-model)
-gs_main = fig.add_gridspec(1, 2, width_ratios=[1.6, 0.8], wspace=0.08)
+gs_main = fig.add_gridspec(1, 2, width_ratios=[1.5, 1.1], wspace=0.08)
 
 # Left: existing 3 panels
 gs_left = gs_main[0, 0].subgridspec(2, 2, height_ratios=[1, 0.9],
@@ -385,12 +382,12 @@ ax_sf = fig.add_subplot(gs_left[1, 1])
 
 # Right: 2 rows × 3 cols of per-model panels
 gs_right = gs_main[0, 1].subgridspec(2, 3, height_ratios=[1, 0.9],
-                                      hspace=0.45, wspace=0.0)
+                                      hspace=0.45, wspace=0.12)
 
 # ── (a) MT-Bench ──
 add_bars(ax_mt, mt_labels, mt_bl, mt_full, mt_half, mt_min,
          mt_bl_err, mt_full_err, mt_half_err, mt_min_err,
-         '(a) MT-Bench (Matching Persona)',
+         '(a) MT-Bench (Expert Persona)',
          'Mixed effect on human-preference-correlated evaluations', BLUE,
          '', (5.5, 9.5), bar_width=0.14)
 ax_mt.set_xlim(-0.5, 8.5)   # 9 categories: 0..8
@@ -401,7 +398,7 @@ ax_mt.text(0.005, 0.5, 'Score', transform=ax_mt.transAxes,
 # ── (b) MMLU ──
 add_bars(ax_mmlu, mmlu_labels, mmlu_bl, mmlu_full, mmlu_half, mmlu_min,
          mmlu_bl_err, mmlu_full_err, mmlu_half_err, mmlu_min_err,
-         '(b) MMLU (Matching Persona)', 'Personas damage accuracy', ORANGE,
+         '(b) MMLU (Expert Persona)', 'Personas damage accuracy', ORANGE,
          '', (0.48, 0.92), show_legend=False, bar_width=0.14)
 ax_mmlu.set_xlim(-0.5, 4.5)  # 5 categories: 0..4
 ax_mmlu.text(0.01, 0.5, 'Accuracy', transform=ax_mmlu.transAxes,
@@ -420,58 +417,115 @@ ax_sf.text(0.01, 0.5, 'Refusal Rate', transform=ax_sf.transAxes,
 
 fig.align_ylabels([ax_mt, ax_mmlu])
 
-# ── (d) 6 Cross-Model panels ──
-ymin_row1 = -0.30
-ymin_row2 = -0.32
+# ── (d) 6 Cross-Model panels: System vs User × {MMLU, MTB, Safety} ──
+# Use the SAME visual style as add_bars (pink/green shading, spines, etc.)
+import matplotlib as mpl
+mpl.rcParams['hatch.linewidth'] = 0.4
+
+SHADOW_RED   = '#f2d5cc'
+SHADOW_GREEN = '#d5e6cc'
+BAR_CM = {'mmlu': ORANGE, 'mtb': BLUE, 'safety': GREEN}
+bar_keys = ['mmlu', 'mtb', 'safety']
+bar_names = ['MMLU', 'MT-Bench', 'Safety']
+ec_kw = {'elinewidth': 0.3, 'capsize': 1.0, 'capthick': 0.3, 'ecolor': DARK}
 
 for idx, md in enumerate(cm_models):
     row, col = divmod(idx, 3)
     ax = fig.add_subplot(gs_right[row, col])
 
-    ymin = ymin_row1 if row == 0 else ymin_row2
-    zero_err = [0, 0]
+    x = np.array([0, 1])   # System=0, User=1
+    w = 0.19               # Same bar_width as add_bars
 
-    add_bars(ax, md['labels'], md['bl'], md['full'], md['half'], md['min'],
-             zero_err, zero_err, zero_err, zero_err,
-             '', md['subtitle'],
-             DARK,
-             '',
-             (ymin, 0.04), show_legend=False, bold_last_label=False)
+    # Grey background for all positions
+    for gi in range(2):
+        ax.axvspan(x[gi] - 0.5, x[gi] + 0.5, color='#e8e8e8', alpha=0.4, zorder=0)
+
+    # Draw 3 bars per position with error bars
+    offsets = np.array([-w, 0, w])
+    for gi, pos_key in enumerate(['sys', 'usr']):
+        pos_data = md[pos_key]
+        pos_err  = md[f'{pos_key}_err']
+        for bi, bk in enumerate(bar_keys):
+            xpos = x[gi] + offsets[bi]
+            v = pos_data[bk]
+            e = pos_err[bk]
+            if v is None or (pos_key == 'sys' and not md['has_sys']):
+                # N/A: hatched empty bar
+                ax.bar(xpos, 0, w, color=LIGHT_GRAY, edgecolor=MID_GRAY,
+                       linewidth=0.3, zorder=3, hatch='////')
+            else:
+                yerr = e if e is not None else 0
+                ax.bar(xpos, v, w, yerr=yerr, color=BAR_CM[bk], edgecolor=DARK,
+                       linewidth=0.3, zorder=3, error_kw=ec_kw)
+
+    ax.axhline(0, color=DARK, linewidth=0.6, zorder=4)
+
+    # Annotate "No System Role" for models without system role
+    if not md['has_sys']:
+        ax.text(x[0], -0.17, 'No System\nRole', ha='center', va='center',
+                fontsize=4, color=DARK, fontstyle='italic', zorder=5)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(['System', 'User'], fontsize=6)
     ax.set_xlim(-0.5, 1.5)
-    ax.axhline(0, color=DARK, linewidth=0.8, zorder=4)
+    ax.set_ylim(-0.35, 0.18)
 
-    # Place y-axis label inside the plot for first column only
+    # (d) label as title (only first panel)
+    if idx == 0:
+        ax.set_title('(d) Cross-Model Effect of Expert Persona',
+                     fontsize=7.5, fontfamily=HEADING_FONT,
+                     fontweight='bold', pad=8, loc='left')
+
+    # Optimization level at subtitle position (aligned with "Mixed effect on..." in a/b/c)
+    ax.text(0.0, 1.01, md['subtitle'], transform=ax.transAxes,
+            ha='left', va='bottom', fontsize=5, fontweight='bold',
+            color=MID_GRAY, fontfamily=BODY_FONT)
+
+    # Model name inside the box, near top
+    ax.text(0.04, 0.97, md['name'], transform=ax.transAxes,
+            ha='left', va='top', fontsize=5, fontweight='bold',
+            color=DARK, fontfamily=BODY_FONT, zorder=5)
+
     if col == 0:
-        ax.text(0.03, 0.5, 'MMLU \u0394', transform=ax.transAxes,
+        ax.text(0.01, 0.35, 'Δ Accuracy', transform=ax.transAxes,
                 ha='left', va='center', fontsize=5, color=DARK,
                 rotation=90, zorder=5)
-
-    # Model name INSIDE the box, top-left, above y=0 line
-    ax.text(0.02, 0.98, md['name'], transform=ax.transAxes,
-            ha='left', va='top', fontsize=5, fontweight='bold',
-            color=DARK, zorder=5)
-
-    # Only show y-axis tick labels on first column
-    if col > 0:
+    else:
         ax.set_yticklabels([])
-        ax.set_ylabel('')
 
-    # If no system data (Mistral), gray out the System bars
-    if not md['has_sys']:
-        ax.text(0, ymin/2, 'No sys\nrole', ha='center', va='center',
-                fontsize=5, color=MID_GRAY, fontstyle='italic', zorder=5)
+    # Grid + spines — identical to add_bars
+    ax.grid(True, axis='y', alpha=0.15, color=MID_GRAY, zorder=0)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_color(MID_GRAY)
+    ax.spines['bottom'].set_color(MID_GRAY)
+    ax.tick_params(length=0, labelsize=6)
+    ax.set_facecolor(LIGHT)
 
     if idx == 0:
-        cm_ax0 = ax
+        cm_ax0 = ax   # first panel (top-left)
+    if idx == 2:
+        cm_ax2 = ax   # third panel (top-right)
 
-# Align (d) title with (a) title
-fig.canvas.draw()
-bb_mt = ax_mt.title.get_window_extent(fig.canvas.get_renderer())
-bb_fig = bb_mt.transformed(fig.transFigure.inverted())
-bb_cm = cm_ax0.get_position()
-fig.text(bb_cm.x0, bb_fig.y0, '(d) Cross-Model Persona Impact',
-         fontsize=7.5, fontweight='bold', fontfamily=HEADING_FONT,
-         va='bottom', ha='left', color=DARK)
+
+
+# Legend for panel (d) — spanning across top row bottom, above x-axis
+from matplotlib.patches import Patch as Patch2
+p_mmlu = Patch2(facecolor=ORANGE, edgecolor=DARK, linewidth=0.3)
+p_mt2  = Patch2(facecolor=BLUE,   edgecolor=DARK, linewidth=0.3)
+p_sf2  = Patch2(facecolor=GREEN,  edgecolor=DARK, linewidth=0.3)
+p_na   = Patch2(facecolor=LIGHT_GRAY, edgecolor=MID_GRAY, linewidth=0.3, hatch='////')
+# Position legend at bottom-left of top row, inside the box area
+bb_left = cm_ax0.get_position()
+leg_x = bb_left.x0
+leg_y = bb_left.y0
+fig.legend(handles=[p_mmlu, p_mt2, p_sf2, p_na],
+           labels=['MMLU \u0394', 'MT-Bench \u0394', 'Safety \u0394', 'N/A'],
+           fontsize=4.5, loc='lower left',
+           bbox_to_anchor=(leg_x, leg_y),
+           framealpha=0.85, edgecolor=MID_GRAY,
+           ncol=4, handlelength=0.8, handletextpad=0.3,
+           columnspacing=0.5, borderpad=0.2)
 
 
 path = os.path.join(out_dir, 'chart_paper_granularity.png')
