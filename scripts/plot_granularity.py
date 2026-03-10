@@ -371,7 +371,7 @@ fig = plt.figure(figsize=(9.0, 3.5))
 fig.patch.set_facecolor(LIGHT)
 
 # Main gridspec: 1 row, 2 cols (left=existing 3, right=6 cross-model)
-gs_main = fig.add_gridspec(1, 2, width_ratios=[1.5, 1.1], wspace=0.08)
+gs_main = fig.add_gridspec(1, 2, width_ratios=[2.0, 1.1], wspace=0.08)
 
 # Left: existing 3 panels
 gs_left = gs_main[0, 0].subgridspec(2, 2, height_ratios=[1, 0.9],
