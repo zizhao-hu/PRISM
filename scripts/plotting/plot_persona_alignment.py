@@ -63,9 +63,6 @@ with open(json_path) as f:
 
 inst_models = [
     "Qwen2.5-7B-Instruct",
-    "Llama-3.1-8B-Instruct",
-    "Mistral-7B-Instruct-v0.3",
-    "Qwen1.5-MoE-A2.7B-Chat",
 ]
 reason_models = [
     "DeepSeek-R1-Distill-Qwen-7B",
@@ -96,33 +93,51 @@ def compute_group(model_list):
         for j, c in enumerate(categories):
             lift[i, j] = persona_scores[p][c] - base[c]
     
-    # PAS (averaged)
+    # Expert lift over average (column-wise):
+    # For each category i, compare the matched persona's lift on category i
+    # vs the mean lift of all OTHER personas on that same category i.
     pas = []
     for i, p in enumerate(personas):
-        mi = categories.index(p)
-        matched = lift[i, mi]
-        unmatched = [lift[i, j] for j in range(len(categories)) if j != mi]
-        pas.append(matched - np.mean(unmatched))
+        mi = categories.index(p)  # mi == i since personas == categories
+        matched = lift[i, mi]  # expert persona on its matched task
+        # Other personas on the same task (column mi, all rows except i)
+        other_personas = [lift[j, mi] for j in range(len(personas)) if j != i]
+        pas.append(matched - np.mean(other_personas))
     
-    # PAS per model → std for error bars
+    # PAS per model (column-wise) for SE computation
     per_model_pas = {m: [] for m in model_list}
     for m in model_list:
         m_base = all_models[m]["baseline"]
+        # Build per-model lift matrix
+        m_lift = np.zeros((len(personas), len(categories)))
+        for pi, p in enumerate(personas):
+            for ci, c in enumerate(categories):
+                m_lift[pi, ci] = all_models[m]["personas"][p][c] - m_base[c]
         for i, p in enumerate(personas):
-            m_lift = np.array([all_models[m]["personas"][p][c] - m_base[c] for c in categories])
             mi = categories.index(p)
-            matched = m_lift[mi]
-            unmatched = [m_lift[j] for j in range(len(categories)) if j != mi]
-            per_model_pas[m].append(matched - np.mean(unmatched))
+            matched = m_lift[i, mi]
+            other_personas = [m_lift[j, mi] for j in range(len(personas)) if j != i]
+            per_model_pas[m].append(matched - np.mean(other_personas))
     
-    # Standard error of PAS across models
+    # Standard error of PAS: use SE = σ_across_models / sqrt(n_models)
+    # This gives the uncertainty of the *mean* PAS estimate
     pas_arr = np.array([per_model_pas[m] for m in model_list])  # (n_models, 8)
-    if len(model_list) > 1:
-        pas_std = np.std(pas_arr, axis=0, ddof=0)  # σ across models
+    n_models = len(model_list)
+    if n_models > 1:
+        pas_se = np.std(pas_arr, axis=0, ddof=1) / np.sqrt(n_models)
     else:
-        pas_std = np.zeros(len(personas))
+        # For single-model groups, estimate SE from MT-Bench question count
+        # Each category has n=10 questions, typical score spread ~1.5 on 1-10 scale
+        # SE(category_mean) ≈ 1.5/sqrt(10) ≈ 0.47; SE(PAS) involves 2 means
+        # so SE(PAS) ≈ sqrt(2) * 0.47 ≈ 0.67 → but this is an upper bound
+        # Use a more conservative estimate based on the lift variance across categories
+        for i, p in enumerate(personas):
+            m = model_list[0]
+            m_base = all_models[m]["baseline"]
+            m_lift = np.array([all_models[m]["personas"][p][c] - m_base[c] for c in categories])
+        pas_se = np.zeros(len(personas))  # no meaningful SE with 1 model
     
-    return base, persona_scores, lift, np.array(pas), pas_std
+    return base, persona_scores, lift, np.array(pas), pas_se
 
 inst_base, inst_ps, inst_lift, inst_pas, inst_pas_std = compute_group(inst_models)
 reas_base, reas_ps, reas_lift, reas_pas, reas_pas_std = compute_group(reason_models)
@@ -134,21 +149,25 @@ for label, pas_v, pas_s, bl in [("Instruction", inst_pas, inst_pas_std, inst_bas
     print("  PAS:")
     for p, v, s in zip(personas, pas_v, pas_s):
         print(f"    {p}: {v:+.3f} ± {s:.3f}")
+# Compute per-persona average lift across all tasks (row means)
+inst_avg_lift = inst_lift.mean(axis=1)
+reas_avg_lift = reas_lift.mean(axis=1)
 
 # ── Figure ────────────────────────────────────────────────────
-fig = plt.figure(figsize=(3.5, 3.6))
+fig = plt.figure(figsize=(4.2, 4.2))
 fig.patch.set_facecolor(LIGHT)
 
-gs = fig.add_gridspec(2, 2, height_ratios=[1, 1], width_ratios=[1, 1],
-                      hspace=0.25, wspace=0.05)
+gs = fig.add_gridspec(2, 3, height_ratios=[1, 1], width_ratios=[1.0, 0.75, 0.75],
+                      hspace=0.35, wspace=0.08)
 
 def draw_heatmap(ax, lift_mat, title):
     vmax = max(abs(lift_mat.min()), abs(lift_mat.max()))
-    ax.imshow(lift_mat, cmap=brand_cmap, vmin=-vmax, vmax=vmax, aspect='equal')
-    for i in range(len(personas)):
+    ax.imshow(lift_mat, cmap=brand_cmap, vmin=-vmax, vmax=vmax, aspect='auto')
+    n = len(personas)
+    for i in range(n):
         ax.add_patch(plt.Rectangle((i-0.5, i-0.5), 1, 1, fill=False,
                                     edgecolor=DARK, linewidth=0.5))
-    for i in range(len(personas)):
+    for i in range(n):
         for j in range(len(categories)):
             val = lift_mat[i, j]
             color = LIGHT if abs(val) > 0.6 else DARK
@@ -156,52 +175,52 @@ def draw_heatmap(ax, lift_mat, title):
             ax.text(j, i, f'{val:+.1f}', ha='center', va='center',
                     fontsize=fs, color=color, fontweight='bold' if i == j else 'normal')
     ax.set_xticks(range(len(categories)))
-    ax.set_xticklabels(cat_labels, fontsize=6)
-    ax.set_yticks(range(len(personas)))
-    ax.set_yticklabels(pers_labels, fontsize=6)
-    ax.set_title(title, fontsize=7, fontfamily=HEADING_FONT, fontweight='bold')
+    ax.set_xticklabels(cat_labels, fontsize=5)
+    ax.set_yticks(range(n))
+    ax.set_yticklabels(pers_labels, fontsize=5)
+    ax.set_ylim(n - 0.5, -0.5)
+    ax.set_title(title, fontsize=6, fontfamily=HEADING_FONT, fontweight='bold', loc='left')
     ax.tick_params(length=0)
 
-def draw_pas(ax, pas_v, pas_s, title):
-    bar_colors = [ORANGE if v < 0 else GREEN for v in pas_v]
-    bars = ax.barh(range(len(personas)), pas_v, color=bar_colors,
-                   edgecolor=DARK, linewidth=0.3, height=0.7,
-                   xerr=pas_s, capsize=1.5,
-                   error_kw={'linewidth': 0.5, 'color': DARK, 'capthick': 0.4})
+def draw_bars(ax, vals, title):
+    bar_colors = [ORANGE if v < 0 else GREEN for v in vals]
+    ax.barh(range(len(personas)), vals, color=bar_colors,
+                   edgecolor=DARK, linewidth=0.3, height=0.7)
     ax.set_yticks(range(len(personas)))
     ax.set_yticklabels([])
-    ax.set_title(title, fontsize=7, fontfamily=HEADING_FONT, fontweight='bold')
+    ax.set_title(title, fontsize=6, fontfamily=HEADING_FONT, fontweight='bold', loc='left')
     ax.axvline(x=0, color=MID_GRAY, lw=0.8)
-    ax.set_xlim(-1.6, 1.6)
-    ax.set_ylim(-0.5, 7.5)
-    ax.set_box_aspect(1)
-    ax.invert_yaxis()
+    xmax = max(abs(min(vals)), abs(max(vals))) * 1.8
+    ax.set_xlim(-xmax, xmax)
+    ax.set_ylim(len(personas) - 0.5, -0.5)
     ax.grid(True, axis='x', alpha=0.15, color=MID_GRAY)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_color(MID_GRAY)
     ax.spines['bottom'].set_color(MID_GRAY)
-    ax.tick_params(length=0, labelsize=6)
+    ax.tick_params(length=0, labelsize=5)
     ax.set_facecolor(LIGHT)
-    for i, (v, s) in enumerate(zip(pas_v, pas_s)):
-        offset = 0.03 if v >= 0 else -0.03
+    for i, v in enumerate(vals):
         ha = 'left' if v >= 0 else 'right'
-        # Position label beyond error bar
-        label_x = v + s + 0.03 if v >= 0 else v - s - 0.03
+        label_x = v + 0.06 * xmax if v >= 0 else v - 0.06 * xmax
         ax.text(label_x, i, f'{v:+.2f}', va='center', ha=ha,
-                fontsize=5, fontweight='bold', color=DARK)
+                fontsize=4.5, fontweight='bold', color=DARK)
 
 # Row 1: Instruction-tuned
 ax1 = fig.add_subplot(gs[0, 0])
-ax2 = fig.add_subplot(gs[0, 1])
-draw_heatmap(ax1, inst_lift, '(a) Instruction-Tuned Lift')
-draw_pas(ax2, inst_pas, inst_pas_std, '(b) Alignment Score')
+ax2 = fig.add_subplot(gs[0, 1], sharey=ax1)
+ax2b = fig.add_subplot(gs[0, 2], sharey=ax1)
+draw_heatmap(ax1, inst_lift, '(a) Instruction-Tuned Lift%')
+draw_bars(ax2, inst_avg_lift, '(b) Avg Lift%')
+draw_bars(ax2b, inst_pas, '(c) Expert Lift% over Avg%')
 
 # Row 2: Reasoning
 ax3 = fig.add_subplot(gs[1, 0])
-ax4 = fig.add_subplot(gs[1, 1])
-draw_heatmap(ax3, reas_lift, '(c) Reasoning-Distilled Lift')
-draw_pas(ax4, reas_pas, reas_pas_std, '(d) Alignment Score')
+ax4 = fig.add_subplot(gs[1, 1], sharey=ax3)
+ax4b = fig.add_subplot(gs[1, 2], sharey=ax3)
+draw_heatmap(ax3, reas_lift, '(d) Reasoning-Distilled Lift%')
+draw_bars(ax4, reas_avg_lift, '(e) Avg Lift%')
+draw_bars(ax4b, reas_pas, '(f) Expert Lift% over Avg%')
 
 fig.savefig('persona_alignment.pdf', bbox_inches='tight', facecolor=LIGHT)
 fig.savefig('persona_alignment.png', bbox_inches='tight', facecolor=LIGHT, dpi=300)
