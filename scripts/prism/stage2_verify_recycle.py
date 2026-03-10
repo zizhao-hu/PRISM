@@ -1,17 +1,16 @@
 """
-PRISM Stage 2: Multi-Persona Evaluation & Grading
+PRISM Stage 2: Expert Persona Evaluation & Grading
 
-For each query (generated in Stage 1):
-  1. Generate K+1 answers: baseline (no persona) + all K personas
-  2. Grade each answer independently (pointwise 1-10 score)
-  3. Compute soft routing targets: softmax(grades / τ)
-  4. Select best persona answer for distillation:
-     - Persona wins  → Distill set: best persona's answer
+For each query (generated in Stage 1 by a specific expert persona):
+  1. Generate 2 answers: baseline (no persona) + the expert persona that
+     generated this query
+  2. Grade both answers independently (pointwise 1-10 score)
+  3. Select the better answer for distillation:
+     - Expert wins  → Distill set: expert persona's answer
      - Baseline wins → Retain set:  baseline answer (preserve base behavior)
 
-The routing targets provide rich supervision: instead of binary
-"did this persona help?", the router learns the full quality
-landscape across all personas + baseline for every query.
+This focused comparison avoids the cost of generating/grading all K
+personas and directly measures whether the matched expert helps.
 
 Usage:
   python -m scripts.prism.stage2_verify_recycle --model Qwen/Qwen2.5-7B-Instruct
@@ -25,7 +24,6 @@ import logging
 import re
 
 import torch
-import torch.nn.functional as F
 from tqdm import tqdm
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -38,7 +36,6 @@ from utils import (
 
 GEN_BATCH_SIZE = 8   # prompts in parallel per forward pass
 GRADE_BATCH_SIZE = 8  # grading prompts in parallel
-ROUTING_TAU = 2.0     # temperature for softmax(grades) → routing targets
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -70,40 +67,40 @@ DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
 
 # ============================================================
-# Multi-Persona Answer Generation
+# Expert Persona Answer Generation (baseline + expert only)
 # ============================================================
 
-def generate_all_persona_answers(model, tokenizer, queries, all_personas):
-    """For each query, generate K+1 answers (baseline + all K personas).
+def generate_expert_answers(model, tokenizer, queries, expert_name, expert_context):
+    """For each query, generate 2 answers: baseline (no persona) + expert persona.
     
     Args:
         queries: list of query strings
-        all_personas: dict {persona_name: context_text}
+        expert_name: name of the expert persona (e.g. 'writing')
+        expert_context: full text of the expert persona prompt
         
     Returns:
         list of dicts, one per query:
-          {"query": str, "answers": {"baseline": str, "writing": str, ...}}
+          {"query": str, "answers": {"baseline": str, "<expert_name>": str}}
     """
-    all_names = ["baseline"] + list(all_personas.keys())
     results = [{"query": q, "answers": {}} for q in queries]
     
-    # Generate per-persona across ALL queries (batched for efficiency)
-    for name in all_names:
-        if name == "baseline":
-            context = None
-        else:
-            context = all_personas[name]
-        
-        msgs_list = [build_chat_messages(tokenizer, context, q) for q in queries]
-        
-        logger.info(f"  Generating {len(queries)} answers for [{name}] "
-                     f"(batch={GEN_BATCH_SIZE})...")
-        answers = batch_generate(model, tokenizer, msgs_list,
+    # Generate baseline answers (no persona)
+    msgs_bl = [build_chat_messages(tokenizer, None, q) for q in queries]
+    logger.info(f"  Generating {len(queries)} baseline answers (batch={GEN_BATCH_SIZE})...")
+    bl_answers = batch_generate(model, tokenizer, msgs_bl,
+                                max_tokens=512, temperature=0.7,
+                                batch_size=GEN_BATCH_SIZE)
+    for i, ans in enumerate(bl_answers):
+        results[i]["answers"]["baseline"] = ans
+    
+    # Generate expert persona answers
+    msgs_exp = [build_chat_messages(tokenizer, expert_context, q) for q in queries]
+    logger.info(f"  Generating {len(queries)} [{expert_name}] answers (batch={GEN_BATCH_SIZE})...")
+    exp_answers = batch_generate(model, tokenizer, msgs_exp,
                                  max_tokens=512, temperature=0.7,
                                  batch_size=GEN_BATCH_SIZE)
-        
-        for i, ans in enumerate(answers):
-            results[i]["answers"][name] = ans
+    for i, ans in enumerate(exp_answers):
+        results[i]["answers"][expert_name] = ans
     
     return results
 
@@ -130,17 +127,17 @@ def _parse_grade(response):
     return 5.0  # fallback
 
 
-def grade_all_answers(model, tokenizer, query_data):
-    """Grade all answers for all queries using pointwise evaluation.
+def grade_answers(model, tokenizer, query_data):
+    """Grade baseline and expert answers for all queries using pointwise evaluation.
     
     Args:
-        query_data: list of {"query": str, "answers": {name: answer_text}}
+        query_data: list of {"query": str, "answers": {"baseline": str, expert_name: str}}
         
     Returns:
-        list of {"query": str, "answers": {...}, "grades": {name: float}}
+        list of {"query": str, "answers": {...}, "grades": {"baseline": float, expert: float}}
     """
     # Build all grading prompts at once for batching
-    grading_tasks = []  # (query_idx, persona_name, prompt_text)
+    grading_tasks = []  # (query_idx, answer_name, prompt_text)
     
     for qi, qd in enumerate(query_data):
         query = qd["query"]
@@ -153,7 +150,7 @@ def grade_all_answers(model, tokenizer, query_data):
             grading_tasks.append((qi, name, grade_prompt))
     
     logger.info(f"  Grading {len(grading_tasks)} answers "
-                f"({len(query_data)} queries × {len(query_data[0]['answers'])} personas)...")
+                f"({len(query_data)} queries × 2)...")
     
     # Batch grade
     msgs_list = [
@@ -193,34 +190,34 @@ def grade_all_answers(model, tokenizer, query_data):
 # Build Training Data with Routing Targets
 # ============================================================
 
-def build_training_data(query_data, persona_contexts, routing_tau=ROUTING_TAU):
-    """Convert graded query data into training samples with soft routing targets.
+def build_training_data(query_data, expert_name, expert_context):
+    """Convert graded query data into training samples.
     
-    For each query:
-      1. Compute routing_target = softmax(grades / τ) over [null, persona_1, ..., persona_K]
-      2. Best persona → distill set (train that expert's LoRA)
-      3. Baseline best → retain set (train null expert / preserve base)
+    For each query, compare baseline vs expert grade:
+      - Expert wins  → Distill set (gate target = 1)
+      - Baseline wins → Retain set (gate target = 0)
     
     Args:
         query_data: list of {"query", "answers", "grades", "persona_source"}
-        persona_contexts: dict {name: context_text} (all K personas)
-        routing_tau: temperature for softmax normalization
+        expert_name: name of the expert persona
+        expert_context: full text of the expert persona prompt
         
     Returns:
         (distill_data, retain_data, stats)
     """
-    persona_names = sorted(persona_contexts.keys())
-    # Expert order: [null/baseline, persona_1, persona_2, ...]
-    expert_names = ["baseline"] + persona_names
-    
     distill_data = []
     retain_data = []
     stats = {
         "total_queries": len(query_data),
         "baseline_wins": 0,
-        "persona_wins": {},
-        "avg_grades": {},
+        "expert_wins": 0,
+        "ties": 0,
+        "avg_baseline_grade": 0,
+        "avg_expert_grade": 0,
     }
+    
+    bl_grades = []
+    exp_grades = []
     
     for qd in query_data:
         query = qd["query"]
@@ -228,62 +225,54 @@ def build_training_data(query_data, persona_contexts, routing_tau=ROUTING_TAU):
         answers = qd["answers"]
         persona_source = qd.get("persona_source", "unknown")
         
-        # Build grade vector in expert order
-        grade_vec = []
-        for name in expert_names:
-            grade_vec.append(grades.get(name, 5.0))
-        
-        # Compute soft routing target: softmax(grades / τ)
-        grade_tensor = torch.tensor(grade_vec, dtype=torch.float32)
-        routing_target = F.softmax(grade_tensor / routing_tau, dim=0).tolist()
-        
-        # Find best performer
-        best_idx = grade_tensor.argmax().item()
-        best_name = expert_names[best_idx]
-        best_grade = grade_vec[best_idx]
+        bl_grade = grades.get("baseline", 5.0)
+        exp_grade = grades.get(expert_name, 5.0)
+        bl_grades.append(bl_grade)
+        exp_grades.append(exp_grade)
         
         # Common fields for the training sample
         sample_base = {
             "instruction": query,
             "persona_source": persona_source,
             "grades": grades,
-            "routing_target": routing_target,
-            "expert_names": expert_names,
-            "best_expert": best_name,
-            "best_grade": best_grade,
+            "baseline_grade": bl_grade,
+            "expert_grade": exp_grade,
         }
         
-        if best_name == "baseline":
-            # Baseline wins → retain set (null expert)
-            stats["baseline_wins"] += 1
+        if exp_grade > bl_grade:
+            # Expert wins → distill set (gate target = 1)
+            stats["expert_wins"] += 1
+            distill_data.append({
+                **sample_base,
+                "output": answers[expert_name],
+                "system": expert_context,
+                "dataset_type": "distill",
+                "persona": expert_name,
+                "gate_target": 1,
+            })
+        else:
+            # Baseline wins or tie → retain set (gate target = 0)
+            if bl_grade == exp_grade:
+                stats["ties"] += 1
+            else:
+                stats["baseline_wins"] += 1
             retain_data.append({
                 **sample_base,
                 "output": answers["baseline"],
                 "system": "",
                 "dataset_type": "retain",
                 "persona": "baseline",
-            })
-        else:
-            # A persona wins → distill set (that persona's expert)
-            stats["persona_wins"][best_name] = stats["persona_wins"].get(best_name, 0) + 1
-            distill_data.append({
-                **sample_base,
-                "output": answers[best_name],
-                "system": persona_contexts[best_name],
-                "dataset_type": "distill",
-                "persona": best_name,
+                "gate_target": 0,
             })
     
-    # Compute average grades per persona
-    for name in expert_names:
-        vals = [qd["grades"].get(name, 5.0) for qd in query_data]
-        stats["avg_grades"][name] = round(sum(vals) / len(vals), 2) if vals else 0
+    stats["avg_baseline_grade"] = round(sum(bl_grades) / len(bl_grades), 2) if bl_grades else 0
+    stats["avg_expert_grade"] = round(sum(exp_grades) / len(exp_grades), 2) if exp_grades else 0
     
     logger.info(f"\nTraining data built:")
-    logger.info(f"  Distill (persona wins): {len(distill_data)}")
-    logger.info(f"  Retain  (baseline wins): {len(retain_data)}")
-    logger.info(f"  Per-persona wins: {stats['persona_wins']}")
-    logger.info(f"  Average grades: {stats['avg_grades']}")
+    logger.info(f"  Distill (expert wins):  {len(distill_data)}")
+    logger.info(f"  Retain  (baseline wins): {len(retain_data)} (ties: {stats['ties']})")
+    logger.info(f"  Avg baseline grade: {stats['avg_baseline_grade']}")
+    logger.info(f"  Avg expert grade:   {stats['avg_expert_grade']}")
     
     return distill_data, retain_data, stats
 
@@ -293,30 +282,31 @@ def build_training_data(query_data, persona_contexts, routing_tau=ROUTING_TAU):
 # ============================================================
 
 def run_stage2(model, tokenizer, queries, persona_source_name, 
-               all_persona_contexts, routing_tau=ROUTING_TAU):
+               expert_context):
     """Full Stage 2 for a batch of queries from one persona source.
     
     Args:
         queries: list of query strings (from Stage 1 for one persona)
         persona_source_name: which persona generated these queries
-        all_persona_contexts: dict {name: context_text} for ALL K personas
+        expert_context: full text of the expert persona prompt
         
     Returns:
         (distill_data, retain_data, graded_data, stats)
     """
-    # 1. Generate K+1 answers per query
-    query_data = generate_all_persona_answers(model, tokenizer, queries, all_persona_contexts)
+    # 1. Generate 2 answers per query: baseline + expert persona
+    query_data = generate_expert_answers(model, tokenizer, queries,
+                                         persona_source_name, expert_context)
     
     # Tag each query with its source persona
     for qd in query_data:
         qd["persona_source"] = persona_source_name
     
-    # 2. Grade all answers
-    query_data = grade_all_answers(model, tokenizer, query_data)
+    # 2. Grade baseline and expert answers
+    query_data = grade_answers(model, tokenizer, query_data)
     
-    # 3. Build training data with routing targets
+    # 3. Build training data: expert wins → distill, baseline wins → retain
     distill_data, retain_data, stats = build_training_data(
-        query_data, all_persona_contexts, routing_tau
+        query_data, persona_source_name, expert_context
     )
     
     return distill_data, retain_data, query_data, stats
@@ -326,7 +316,7 @@ def run_stage2(model, tokenizer, queries, persona_source_name,
 # Full Pipeline Runner (standalone)
 # ============================================================
 
-def run(model_name, data_dir, routing_tau=ROUTING_TAU):
+def run(model_name, data_dir):
     """Run Stage 2 for all personas."""
     distill_path = os.path.join(data_dir, "distill_set.json")
     retain_path = os.path.join(data_dir, "retain_set.json")
@@ -338,21 +328,17 @@ def run(model_name, data_dir, routing_tau=ROUTING_TAU):
 
     model, tokenizer = load_model(model_name)
     
-    # Load all persona contexts as text
-    all_persona_texts = {}
-    for name, path in PERSONA_CONTEXTS.items():
-        all_persona_texts[name] = load_text(path)
-    
     all_distill = []
     all_retain = []
     all_graded = []
     all_stats = {}
 
-    for persona_name in PERSONA_CONTEXTS.keys():
+    for persona_name, persona_path in PERSONA_CONTEXTS.items():
         logger.info(f"\n{'='*60}")
         logger.info(f"Processing queries from persona: {persona_name}")
         logger.info(f"{'='*60}")
 
+        expert_context = load_text(persona_path)
         persona_dir = os.path.join(data_dir, "per_persona", persona_name)
         os.makedirs(persona_dir, exist_ok=True)
 
@@ -374,10 +360,10 @@ def run(model_name, data_dir, routing_tau=ROUTING_TAU):
             continue
         queries = load_json(queries_path)
 
-        # Run full Stage 2
+        # Run Stage 2: baseline vs expert only
         distill, retain, graded, stats = run_stage2(
             model, tokenizer, queries, persona_name,
-            all_persona_texts, routing_tau
+            expert_context
         )
 
         # Save per-persona results
@@ -426,16 +412,14 @@ def run(model_name, data_dir, routing_tau=ROUTING_TAU):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="PRISM Stage 2: Multi-Persona Grading")
+    parser = argparse.ArgumentParser(description="PRISM Stage 2: Expert Persona Grading")
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--data_dir", default=None)
-    parser.add_argument("--routing_tau", type=float, default=ROUTING_TAU,
-                        help="Temperature for softmax(grades) → routing targets")
     args = parser.parse_args()
 
     slug = get_model_slug(args.model)
     data_dir = args.data_dir or f"dataset/synthetic/persona_prism/{slug}"
-    run(args.model, data_dir, args.routing_tau)
+    run(args.model, data_dir)
 
 
 if __name__ == "__main__":

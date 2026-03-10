@@ -307,8 +307,8 @@ sf_min_err  = sf_binom_err(sf_min)
 # Each model has 'sys' and 'usr' dicts with {mmlu, mtb, safety} delta + SE values.
 # None = data not yet available (will show as N/A hatched bar)
 # MTB values are NORMALIZED by /10 to match MMLU's 0-1 proportion scale.
-# SE uses sample-level binomial SE: sqrt(p*(1-p)/n + p'*(1-p')/n)
-#   MMLU: n≈14042, MT-Bench: n=80 (score SD≈1.5, /10), Safety: n≈1058
+# SE of delta = sqrt(SE_bl^2 + SE_persona^2)
+#   MMLU: binomial SE, n≈14042 → SE≈0.006   MT-Bench: paired SD≈1.0, n=80 → SE≈0.011   Safety: binomial, n≈1058 → SE≈0.021
 cm_models = [
     {
         'name': 'Mistral-7B-v0.3',
@@ -317,52 +317,52 @@ cm_models = [
         'sys':     {'mmlu': None,    'mtb': None,     'safety': None},
         'sys_err': {'mmlu': None,    'mtb': None,     'safety': None},
         'usr':     {'mmlu': -0.0131, 'mtb': -0.1777,  'safety': 0.023},
-        'usr_err': {'mmlu': 0.006,   'mtb': 0.024,    'safety': 0.015},
+        'usr_err': {'mmlu': 0.006,   'mtb': 0.011,    'safety': 0.021},
     },
     {
         'name': 'Qwen2.5-7B',
         'subtitle': 'Med Optimized',
         'has_sys': True,
         'sys':     {'mmlu': -0.0351, 'mtb': -0.0131,  'safety': 0.093},
-        'sys_err': {'mmlu': 0.005,   'mtb': 0.024,    'safety': 0.021},
+        'sys_err': {'mmlu': 0.005,   'mtb': 0.011,    'safety': 0.021},
         'usr':     {'mmlu': -0.0244, 'mtb': -0.0155,   'safety': 0.074},
-        'usr_err': {'mmlu': 0.005,   'mtb': 0.024,     'safety': 0.021},
+        'usr_err': {'mmlu': 0.005,   'mtb': 0.011,     'safety': 0.021},
     },
     {
         'name': 'Llama-3.1-8B\u2020',
         'subtitle': 'High Optimized',
         'has_sys': True,
         'sys':     {'mmlu': -0.1327, 'mtb': 0.0247,   'safety': 0.107},
-        'sys_err': {'mmlu': 0.006,   'mtb': 0.024,    'safety': 0.022},
+        'sys_err': {'mmlu': 0.006,   'mtb': 0.011,    'safety': 0.021},
         'usr':     {'mmlu': -0.2351, 'mtb': 0.0029,    'safety': 0.100},
-        'usr_err': {'mmlu': 0.006,   'mtb': 0.024,     'safety': 0.022},
+        'usr_err': {'mmlu': 0.006,   'mtb': 0.011,     'safety': 0.021},
     },
     {
         'name': 'Qwen1.5-MoE',
-        'subtitle': 'Med Optimized',
+        'subtitle': 'Not Optimized',
         'has_sys': True,
         'sys':     {'mmlu': -0.0263, 'mtb': -0.1002,  'safety': 0.021},
-        'sys_err': {'mmlu': 0.006,   'mtb': 0.024,    'safety': 0.022},
-        'usr':     {'mmlu': -0.0295, 'mtb': None,      'safety': None},
-        'usr_err': {'mmlu': 0.006,   'mtb': None,      'safety': None},
+        'sys_err': {'mmlu': 0.006,   'mtb': 0.011,    'safety': 0.022},
+        'usr':     {'mmlu': -0.0295, 'mtb': 0.0054,    'safety': -0.004},
+        'usr_err': {'mmlu': 0.006,   'mtb': 0.011,     'safety': 0.022},
     },
     {
         'name': 'DS-R1-Qwen-7B',
         'subtitle': 'Reasoning',
         'has_sys': True,
         'sys':     {'mmlu': -0.1821, 'mtb': 0.0057,   'safety': 0.0},
-        'sys_err': {'mmlu': 0.006,   'mtb': 0.024,    'safety': 0.002},
-        'usr':     {'mmlu': -0.1558, 'mtb': None,      'safety': None},
-        'usr_err': {'mmlu': 0.006,   'mtb': None,      'safety': None},
+        'sys_err': {'mmlu': 0.006,   'mtb': 0.011,    'safety': 0.001},
+        'usr':     {'mmlu': -0.1558, 'mtb': -0.2135,   'safety': 0.0},
+        'usr_err': {'mmlu': 0.006,   'mtb': 0.011,     'safety': 0.001},
     },
     {
         'name': 'DS-R1-Llama-8B',
         'subtitle': 'Reasoning',
         'has_sys': True,
         'sys':     {'mmlu': -0.2849, 'mtb': 0.0346,   'safety': 0.001},
-        'sys_err': {'mmlu': 0.006,   'mtb': 0.024,    'safety': 0.002},
-        'usr':     {'mmlu': -0.2803, 'mtb': None,      'safety': None},
-        'usr_err': {'mmlu': 0.006,   'mtb': None,      'safety': None},
+        'sys_err': {'mmlu': 0.006,   'mtb': 0.011,    'safety': 0.001},
+        'usr':     {'mmlu': -0.2803, 'mtb': -0.1583,   'safety': 0.0},
+        'usr_err': {'mmlu': 0.006,   'mtb': 0.011,     'safety': 0.001},
     },
 ]
 
@@ -447,23 +447,31 @@ for idx, md in enumerate(cm_models):
         pos_err  = md[f'{pos_key}_err']
         for bi, bk in enumerate(bar_keys):
             xpos = x[gi] + offsets[bi]
-            v = pos_data[bk]
-            e = pos_err[bk]
-            if v is None or (pos_key == 'sys' and not md['has_sys']):
-                # N/A: hatched empty bar
-                ax.bar(xpos, 0, w, color=LIGHT_GRAY, edgecolor=MID_GRAY,
-                       linewidth=0.3, zorder=3, hatch='////')
+            if pos_key == 'sys' and not md['has_sys']:
+                # No system role: mirror user bars but dimmed
+                v = md['usr'][bk]
+                e = md['usr_err'][bk]
+                if v is not None:
+                    yerr = e if e is not None else 0
+                    ax.bar(xpos, v, w, yerr=yerr, color=BAR_CM[bk], edgecolor=DARK,
+                           linewidth=0.3, zorder=3, error_kw=ec_kw, alpha=0.35)
             else:
-                yerr = e if e is not None else 0
-                ax.bar(xpos, v, w, yerr=yerr, color=BAR_CM[bk], edgecolor=DARK,
-                       linewidth=0.3, zorder=3, error_kw=ec_kw)
+                v = pos_data[bk]
+                e = pos_err[bk]
+                if v is None:
+                    ax.bar(xpos, 0, w, color=LIGHT_GRAY, edgecolor=MID_GRAY,
+                           linewidth=0.3, zorder=3, hatch='////')
+                else:
+                    yerr = e if e is not None else 0
+                    ax.bar(xpos, v, w, yerr=yerr, color=BAR_CM[bk], edgecolor=DARK,
+                           linewidth=0.3, zorder=3, error_kw=ec_kw)
 
     ax.axhline(0, color=DARK, linewidth=0.6, zorder=4)
 
-    # Annotate "No System Role" for models without system role
+    # Annotate "No System Role" for models without system role — above the bars
     if not md['has_sys']:
-        ax.text(x[0], -0.17, 'No System\nRole', ha='center', va='center',
-                fontsize=4, color=DARK, fontstyle='italic', zorder=5)
+        ax.text(x[0], 0.15, 'No System\nRole', ha='center', va='bottom',
+                fontsize=4, color=MID_GRAY, fontstyle='italic', zorder=5)
 
     ax.set_xticks(x)
     ax.set_xticklabels(['System', 'User'], fontsize=6)
@@ -514,13 +522,13 @@ from matplotlib.patches import Patch as Patch2
 p_mmlu = Patch2(facecolor=ORANGE, edgecolor=DARK, linewidth=0.3)
 p_mt2  = Patch2(facecolor=BLUE,   edgecolor=DARK, linewidth=0.3)
 p_sf2  = Patch2(facecolor=GREEN,  edgecolor=DARK, linewidth=0.3)
-p_na   = Patch2(facecolor=LIGHT_GRAY, edgecolor=MID_GRAY, linewidth=0.3, hatch='////')
+
 # Position legend at bottom-left of top row, inside the box area
 bb_left = cm_ax0.get_position()
 leg_x = bb_left.x0
 leg_y = bb_left.y0
-fig.legend(handles=[p_mmlu, p_mt2, p_sf2, p_na],
-           labels=['MMLU \u0394', 'MT-Bench \u0394', 'Safety \u0394', 'N/A'],
+fig.legend(handles=[p_mmlu, p_mt2, p_sf2],
+           labels=['MMLU', 'MT-Bench', 'Safety'],
            fontsize=4.5, loc='lower left',
            bbox_to_anchor=(leg_x, leg_y),
            framealpha=0.85, edgecolor=MID_GRAY,
