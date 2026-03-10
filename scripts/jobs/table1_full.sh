@@ -12,7 +12,7 @@
 set -e
 source ~/.bashrc
 conda activate DREAM
-cd /project2/jessetho_1732/zizhaoh/PRISM
+cd /scratch1/zizhaoh/PRISM
 
 export HF_HOME=/scratch1/zizhaoh/.cache/huggingface
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
