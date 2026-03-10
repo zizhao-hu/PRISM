@@ -236,7 +236,7 @@ def _summarize_mt_bench(judgment_file, summary_file):
 
 
 def _run_mt_bench(exp_name, setting, model_name, adapter_path=None, system_prompt=None,
-                  judge_model=None):
+                  judge_model=None, gate_path=None):
     """Generate + judge + summarize MT-Bench for one setting."""
     out = result_dir(exp_name, setting, "mt_bench")
     if _mt_bench_done(out):
@@ -261,6 +261,8 @@ def _run_mt_bench(exp_name, setting, model_name, adapter_path=None, system_promp
                "--question_file", question_file, "--output_file", answer_file]
         if adapter_path:
             cmd += ["--adapter_path", adapter_path]
+        if gate_path:
+            cmd += ["--gate_path", gate_path]
         if system_prompt:
             cmd += ["--system_prompt", system_prompt]
         logger.info(f"  MT-Bench generate: {setting}")
@@ -279,7 +281,7 @@ def _run_mt_bench(exp_name, setting, model_name, adapter_path=None, system_promp
     _summarize_mt_bench(judgment_file, summary_file)
 
 
-def _run_safety(exp_name, setting, model_name, adapter_path=None, context_file=None):
+def _run_safety(exp_name, setting, model_name, adapter_path=None, context_file=None, gate_path=None):
     """Run safety eval using eval_safety.py.
 
     Results land at: results/{exp_name}/safety/main/{setting}/{benchmark}/{slug}/summary.json
@@ -316,6 +318,8 @@ def _run_safety(exp_name, setting, model_name, adapter_path=None, context_file=N
            "--skip_utility", "--skip_kl"]
     if adapter_path:
         cmd += ["--adapter_path", adapter_path]
+    if gate_path:
+        cmd += ["--gate_path", gate_path]
     if context_file:
         cmd += ["--context_file", context_file]
     logger.info(f"  Safety: {setting}")

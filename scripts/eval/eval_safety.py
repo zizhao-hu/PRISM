@@ -42,10 +42,30 @@ import argparse
 import json
 import logging
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+
+
+class BinaryGate(nn.Module):
+    """Lightweight MLP gate: hidden_state → {use_base, use_lora}."""
+    def __init__(self, hidden_dim, dropout=0.1):
+        super().__init__()
+        self.gate = nn.Sequential(
+            nn.Linear(hidden_dim, 256),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(256, 2),
+        )
+
+    def forward(self, hidden_states):
+        return self.gate(hidden_states)
+
+    def predict(self, hidden_states):
+        logits = self.forward(hidden_states)
+        return logits.argmax(dim=-1)
 
 try:
     from utils import (
@@ -207,8 +227,12 @@ def gen_complete(filepath, expected_count):
 
 def generate_safety_responses(model, tokenizer, prompts, context=None,
                               use_trigger=False, save_path=None,
-                              batch_size=8):
-    """Generate responses to safety prompts, with batched generation and resume support."""
+                              batch_size=8, gate=None):
+    """Generate responses to safety prompts, with batched generation and resume support.
+    
+    If gate is provided, uses per-query routing: gate predicts 0=base, 1=lora.
+    Falls back to sequential generation when gate is active.
+    """
     label = "Trigger" if use_trigger else ("Context" if context else "Base")
     
     generations = []
@@ -224,23 +248,56 @@ def generate_safety_responses(model, tokenizer, prompts, context=None,
     
     remaining_prompts = prompts[len(generations):]
     
-    # Build all message lists upfront
-    all_messages = []
-    for prompt in remaining_prompts:
-        if context:
-            msgs = build_chat_messages(tokenizer, context, prompt)
-        else:
+    if gate is not None:
+        # Gate-aware: per-query routing (sequential)
+        logger.info(f"  {label}: generating {len(remaining_prompts)} responses with gate routing")
+        n_lora, n_base = 0, 0
+        for prompt in tqdm(remaining_prompts, desc=f"{label} (gated)"):
             msgs = [{"role": "user", "content": prompt}]
-        all_messages.append(msgs)
-    
-    # Batched generation
-    logger.info(f"  {label}: generating {len(remaining_prompts)} responses (batch_size={batch_size})")
-    responses = batch_generate(model, tokenizer, all_messages,
-                               max_tokens=256, temperature=0.0,
-                               batch_size=batch_size)
-    
-    for prompt, response in zip(remaining_prompts, responses):
-        generations.append({"prompt": prompt, "response": response, "condition": label})
+            text = tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+            gate_ids = tokenizer(text, return_tensors="pt", truncation=True, max_length=4096).input_ids.to(model.device)
+            
+            # Gate decision using base model hidden states
+            model.disable_adapter_layers()
+            with torch.no_grad():
+                out = model(input_ids=gate_ids, output_hidden_states=True)
+                hidden = out.hidden_states[1]  # layer 1
+                last_tok = hidden[0, -1, :].unsqueeze(0)
+                decision = gate.predict(last_tok).item()
+            
+            if decision == 1:
+                model.enable_adapter_layers()
+                n_lora += 1
+            else:
+                n_base += 1
+                # adapter stays disabled
+            
+            response = _tokenize_and_generate(model, tokenizer, msgs, max_new_tokens=256)
+            generations.append({"prompt": prompt, "response": response, "condition": label,
+                                "gate_decision": decision})
+            
+            # Save periodically
+            if save_path and len(generations) % 50 == 0:
+                save_json(generations, save_path)
+        
+        logger.info(f"  Gate routing: {n_lora} → LoRA, {n_base} → base")
+    else:
+        # No gate: batched generation (original behavior)
+        all_messages = []
+        for prompt in remaining_prompts:
+            if context:
+                msgs = build_chat_messages(tokenizer, context, prompt)
+            else:
+                msgs = [{"role": "user", "content": prompt}]
+            all_messages.append(msgs)
+        
+        logger.info(f"  {label}: generating {len(remaining_prompts)} responses (batch_size={batch_size})")
+        responses = batch_generate(model, tokenizer, all_messages,
+                                   max_tokens=256, temperature=0.0,
+                                   batch_size=batch_size)
+        
+        for prompt, response in zip(remaining_prompts, responses):
+            generations.append({"prompt": prompt, "response": response, "condition": label})
     
     if save_path:
         save_json(generations, save_path)
@@ -563,8 +620,13 @@ Examples:
     
     parser.add_argument("--base_model", default="Qwen/Qwen2.5-1.5B-Instruct")
     parser.add_argument("--adapter_path", default=None, help="Finetuned LoRA adapter path")
+    parser.add_argument("--gate_path", default=None,
+                        help="Path to gate.pt for gated LoRA routing. If provided, "
+                             "each query is routed through the gate: 0=base, 1=lora.")
     parser.add_argument("--judge_model", default="Qwen/Qwen2.5-1.5B-Instruct")
     parser.add_argument("--context_file", default=None, help="Safety context file")
+    parser.add_argument("--force_empty_system", action="store_true",
+                        help="Inject explicit empty system message to suppress baked-in tokenizer defaults")
     
     # Safety eval
     parser.add_argument("--benchmarks", nargs="*",
@@ -603,6 +665,9 @@ Examples:
     
     # ---- Setup paths ----
     safety_context = load_context_prompt(args.context_file) if args.context_file else None
+    # --force_empty_system: override baked-in tokenizer defaults with an explicit empty system message
+    if args.force_empty_system:
+        safety_context = ""  # empty string → build_chat_messages injects {role:system, content:""}
     model_slug = get_model_slug(args.base_model, args.adapter_path)
     
     exp_name = args.experiment_name or "default"
@@ -691,9 +756,26 @@ Examples:
                 
                 if not gen_complete(ft_path, len(prompts)):
                     ft_model, ft_tok = load_model(args.base_model, args.adapter_path)
+                    
+                    # Load gate if provided
+                    gate = None
+                    gate_path = args.gate_path
+                    if not gate_path:
+                        candidate = os.path.join(os.path.dirname(args.adapter_path), "gate.pt")
+                        if os.path.exists(candidate):
+                            gate_path = candidate
+                    if gate_path and os.path.exists(gate_path):
+                        logger.info(f"Loading gate from: {gate_path}")
+                        hidden_dim = ft_model.config.hidden_size
+                        gate = BinaryGate(hidden_dim)
+                        gate.load_state_dict(torch.load(gate_path, map_location="cpu", weights_only=True))
+                        gate = gate.to(next(ft_model.parameters()).device).to(next(ft_model.parameters()).dtype)
+                        gate.eval()
+                        logger.info("Gate loaded. Will route per-query: 0=base, 1=LoRA")
+                    
                     generate_safety_responses(ft_model, ft_tok, prompts,
                                               use_trigger=args.use_trigger,
-                                              save_path=ft_path)
+                                              save_path=ft_path, gate=gate)
                     unload_model(ft_model, ft_tok)
             
             # ---- Judging ----
