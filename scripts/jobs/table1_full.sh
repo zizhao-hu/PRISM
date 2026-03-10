@@ -25,6 +25,7 @@ CONFIG=$2
 echo "=========================================="
 echo "TABLE 1: Full pipeline for $MODEL"
 echo "Config: $CONFIG"
+echo "CWD: $(pwd)"
 echo "GPU: $(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null || echo 'unknown')"
 echo "Start: $(date)"
 echo "=========================================="

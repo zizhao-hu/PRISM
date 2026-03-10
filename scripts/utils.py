@@ -188,33 +188,41 @@ def list_available_benchmarks():
 def build_chat_messages(tokenizer, system_prompt, user_prompt, assistant_response=None):
     """
     Build chat messages, handling models that don't support system role.
-    
+
     Args:
         tokenizer: HuggingFace tokenizer
-        system_prompt: System prompt string
+        system_prompt: System prompt string, or None to omit entirely.
+                       Pass "" (empty string) to inject an explicit empty system
+                       message, which suppresses baked-in tokenizer defaults.
         user_prompt: User input string
         assistant_response: Optional assistant response (for training data formatting)
-    
+
     Returns:
         list of message dicts
     """
     has_system = _tokenizer_supports_system(tokenizer)
-    
-    if has_system and system_prompt:
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]
-    elif system_prompt:
-        combined = f"{system_prompt}\n\n{user_prompt}"
-        messages = [{"role": "user", "content": combined}]
+
+    if system_prompt is not None:
+        # system_prompt="" → explicit empty override; system_prompt=<text> → normal persona
+        if has_system:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ]
+        else:
+            # Model doesn't support system role: prepend non-empty content only
+            if system_prompt:
+                combined = f"{system_prompt}\n\n{user_prompt}"
+            else:
+                combined = user_prompt
+            messages = [{"role": "user", "content": combined}]
     else:
-        # No system prompt — just user message
+        # None → no system message at all (uses tokenizer default)
         messages = [{"role": "user", "content": user_prompt}]
-    
+
     if assistant_response is not None:
         messages.append({"role": "assistant", "content": assistant_response})
-    
+
     return messages
 
 

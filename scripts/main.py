@@ -203,30 +203,29 @@ def run_mmlu(model_name, setting, adapter_path=None):
 # ============================================================
 
 def run_safety(model_name, setting, context_path=None, adapter_path=None):
-    """Run safety eval on 3 benchmarks."""
+    """Run safety eval on HarmBench using the updated eval_safety.py API."""
     out = result_dir(model_name, setting, "safety")
-    if _safety_done(out):
+
+    # Check for existing summary
+    summary_path = os.path.join(out, "summary.json")
+    if os.path.exists(summary_path):
         logger.info(f"[SKIP] Safety done: {out}")
         return
 
-    for bench_name, bench_path in SAFETY_BENCHMARKS.items():
-        result_file = os.path.join(out, f"{bench_name}.json")
-        if os.path.exists(result_file):
-            logger.info(f"[SKIP] {bench_name} exists: {result_file}")
-            continue
-
-        cmd = [sys.executable, "scripts/eval/eval_safety.py",
-               "--model", model_name,
-               "--benchmark", bench_path,
-               "--output", result_file]
-        if context_path:
-            cmd += ["--context", context_path]
-        else:
-            cmd += ["--no_context"]
-        if adapter_path:
-            cmd += ["--adapter_path", adapter_path]
-        logger.info(f"Running safety {bench_name}: {setting}")
-        subprocess.run(cmd, check=True)
+    cmd = [sys.executable, "scripts/eval/eval_safety.py",
+           "--base_model", model_name,
+           "--judge_model", "Qwen/Qwen2.5-7B-Instruct",
+           "--benchmarks", "HarmBench",
+           "--output_root", out,
+           "--experiment_type", "main",
+           "--experiment_name", setting.replace("/", "_"),
+           "--skip_utility", "--skip_kl"]
+    if context_path:
+        cmd += ["--context_file", context_path]
+    if adapter_path:
+        cmd += ["--adapter_path", adapter_path]
+    logger.info(f"Running safety HarmBench: {setting}")
+    subprocess.run(cmd, check=True)
 
 
 # ============================================================

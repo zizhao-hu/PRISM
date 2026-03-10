@@ -21,6 +21,26 @@ import torch
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
+import torch.nn as nn
+
+
+class BinaryGate(nn.Module):
+    """Lightweight MLP gate: hidden_state → {use_base, use_lora}."""
+    def __init__(self, hidden_dim, dropout=0.1):
+        super().__init__()
+        self.gate = nn.Sequential(
+            nn.Linear(hidden_dim, 256),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(256, 2),
+        )
+
+    def forward(self, hidden_states):
+        return self.gate(hidden_states)
+
+    def predict(self, hidden_states):
+        logits = self.forward(hidden_states)
+        return logits.argmax(dim=-1)
 
 
 def load_questions(path):
@@ -63,9 +83,26 @@ def run_generation(args):
         args.model, device_map="auto", torch_dtype=torch.bfloat16, trust_remote_code=True
     )
 
+    gate = None
     if args.adapter_path:
         print(f"Loading LoRA adapter from: {args.adapter_path}")
         model = PeftModel.from_pretrained(model, args.adapter_path)
+
+        # Load gate if available
+        gate_path = args.gate_path
+        if not gate_path:
+            # Auto-detect: look for gate.pt in adapter parent directory
+            candidate = os.path.join(os.path.dirname(args.adapter_path), "gate.pt")
+            if os.path.exists(candidate):
+                gate_path = candidate
+        if gate_path and os.path.exists(gate_path):
+            print(f"Loading gate from: {gate_path}")
+            hidden_dim = model.config.hidden_size
+            gate = BinaryGate(hidden_dim)
+            gate.load_state_dict(torch.load(gate_path, map_location="cpu", weights_only=True))
+            gate = gate.to(next(model.parameters()).device).to(next(model.parameters()).dtype)
+            gate.eval()
+            print(f"Gate loaded. Will route per-query: 0=base, 1=LoRA")
 
     model.eval()
 
@@ -77,9 +114,28 @@ def run_generation(args):
 
         # Turn 1
         messages = []
-        if args.system_prompt:
+        if args.force_empty_system:
+            # Inject an explicit empty system message to suppress baked-in defaults
+            messages.append({"role": "system", "content": ""})
+        elif args.system_prompt:
             messages.append({"role": "system", "content": args.system_prompt})
         messages.append({"role": "user", "content": turns[0]})
+
+        # Gate-based routing: decide whether to use LoRA for this query
+        if gate is not None:
+            gate_input = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            gate_ids = tokenizer(gate_input, return_tensors="pt", truncation=True, max_length=4096).input_ids.to(model.device)
+            model.disable_adapter_layers()
+            with torch.no_grad():
+                out = model(input_ids=gate_ids, output_hidden_states=True)
+                hidden = out.hidden_states[1]  # layer 1
+                last_tok = hidden[0, -1, :].unsqueeze(0)
+                decision = gate.predict(last_tok).item()
+            if decision == 1:
+                model.enable_adapter_layers()
+                # LoRA ON for this query
+            # else: adapter stays disabled (base model)
+
         answer1 = generate_answer(model, tokenizer, messages, args.max_new_tokens)
 
         # Turn 2 (if exists)
@@ -233,8 +289,11 @@ if __name__ == "__main__":
     parser.add_argument("--answer_file", default=None, help="Path to answers (for judging)")
     parser.add_argument("--output_file", required=True)
     parser.add_argument("--max_new_tokens", type=int, default=1024)
+    parser.add_argument("--gate_path", default=None, help="Path to gate.pt for gated LoRA routing")
     parser.add_argument("--system_prompt", default=None,
                         help="System prompt text or path to .txt file")
+    parser.add_argument("--force_empty_system", action="store_true",
+                        help="Inject explicit empty system message, overriding baked-in chat template defaults")
     args = parser.parse_args()
 
     # Load system prompt from file if it's a path
