@@ -187,7 +187,7 @@ def draw_bars(ax, vals, title):
     ax.barh(range(len(personas)), vals, color=bar_colors,
                    edgecolor=DARK, linewidth=0.3, height=0.7)
     ax.set_yticks(range(len(personas)))
-    ax.set_yticklabels([])
+    ax.tick_params(axis='y', labelleft=False)
     ax.set_title(title, fontsize=6, fontfamily=HEADING_FONT, fontweight='bold', loc='left')
     ax.axvline(x=0, color=MID_GRAY, lw=0.8)
     xmax = max(abs(min(vals)), abs(max(vals))) * 1.8
@@ -210,7 +210,7 @@ def draw_bars(ax, vals, title):
 ax1 = fig.add_subplot(gs[0, 0])
 ax2 = fig.add_subplot(gs[0, 1], sharey=ax1)
 ax2b = fig.add_subplot(gs[0, 2], sharey=ax1)
-draw_heatmap(ax1, inst_lift, '(a) Instruction-Tuned Lift%')
+draw_heatmap(ax1, inst_lift, '(a) Instruction-Tuned Lift')
 draw_bars(ax2, inst_avg_lift, '(b) Expert on Task')
 draw_bars(ax2b, inst_pas, '(c) Expert vs Avg')
 
@@ -218,7 +218,7 @@ draw_bars(ax2b, inst_pas, '(c) Expert vs Avg')
 ax3 = fig.add_subplot(gs[1, 0])
 ax4 = fig.add_subplot(gs[1, 1], sharey=ax3)
 ax4b = fig.add_subplot(gs[1, 2], sharey=ax3)
-draw_heatmap(ax3, reas_lift, '(d) Reasoning-Distilled Lift%')
+draw_heatmap(ax3, reas_lift, '(d) Reasoning-Distilled Lift')
 draw_bars(ax4, reas_avg_lift, '(e) Expert on Task')
 draw_bars(ax4b, reas_pas, '(f) Expert vs Avg')
 
