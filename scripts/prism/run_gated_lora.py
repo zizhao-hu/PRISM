@@ -609,7 +609,7 @@ def run_gated_lora_pipeline(base_model, exp_name, source_exp_name=None,
     # ---- Evaluation: populate the paper table row ----
     # Import eval helpers from the iterative pipeline
     from run_iterative import (
-        _run_mt_bench, _run_safety, _run_mmlu, _run_utility,
+        _run_mt_bench, _run_safety, _run_mmlu, _run_mmlu_gated, _run_utility,
         SAFETY_BENCHMARKS,
     )
     
@@ -633,7 +633,8 @@ def run_gated_lora_pipeline(base_model, exp_name, source_exp_name=None,
                   gate_path=gate_model_path)
     _run_safety(exp_name, "gated_lora", base_model, adapter_path=lora_adapter_path,
                 gate_path=gate_model_path)
-    _run_mmlu(exp_name, "gated_lora", base_model, adapter_path=lora_adapter_path)
+    _run_mmlu_gated(exp_name, "gated_lora", base_model, adapter_path=lora_adapter_path,
+                    gate_path=gate_model_path)
     
     # Utility (G-Eval, Win Rate, KL)
     _run_utility(exp_name, base_model, lora_adapter_path)
@@ -679,7 +680,7 @@ def main():
             sys.exit(1)
         
         from run_iterative import (
-            _run_mt_bench, _run_safety, _run_mmlu, _run_utility,
+            _run_mt_bench, _run_safety, _run_mmlu, _run_mmlu_gated, _run_utility,
             SAFETY_BENCHMARKS,
         )
         
@@ -695,7 +696,8 @@ def main():
                       gate_path=gate_model_path)
         _run_safety(exp_name, "gated_lora", base_model, adapter_path=lora_adapter_path,
                     gate_path=gate_model_path)
-        _run_mmlu(exp_name, "gated_lora", base_model, adapter_path=lora_adapter_path)
+        _run_mmlu_gated(exp_name, "gated_lora", base_model, adapter_path=lora_adapter_path,
+                        gate_path=gate_model_path)
         
         _run_utility(exp_name, base_model, lora_adapter_path)
         logger.info(f"Eval complete. Results → {RESULTS_ROOT}/{exp_name}/")

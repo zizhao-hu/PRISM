@@ -421,6 +421,32 @@ def _run_mmlu(exp_name, setting, model_name, adapter_path=None, system_prompt=No
         logger.warning(f"MMLU eval failed: {e}")
 
 
+def _run_mmlu_gated(exp_name, setting, model_name, adapter_path, gate_path=None):
+    """Run gate-aware MMLU evaluation.
+    
+    Unlike lm_eval, this evaluates each question through the gate first,
+    then uses the appropriate model (base or LoRA) for log-likelihood scoring.
+    """
+    out = result_dir(exp_name, setting, "mmlu")
+    summary_path = os.path.join(out, "mmlu_gated_summary.json")
+    if os.path.exists(summary_path):
+        logger.info(f"[SKIP] MMLU gated done: {summary_path}")
+        return
+    
+    cmd = [sys.executable, "scripts/eval/eval_mmlu_gated.py",
+           "--model", model_name,
+           "--adapter_path", adapter_path,
+           "--output_dir", out]
+    if gate_path:
+        cmd += ["--gate_path", gate_path]
+    
+    logger.info(f"  MMLU (gated): {setting}")
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        logger.warning(f"MMLU gated eval failed: {e}")
+
+
 # ============================================================
 # Full evaluation (all paper table rows)
 # ============================================================
