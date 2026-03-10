@@ -154,10 +154,10 @@ inst_avg_lift = inst_lift.mean(axis=1)
 reas_avg_lift = reas_lift.mean(axis=1)
 
 # ── Figure ────────────────────────────────────────────────────
-fig = plt.figure(figsize=(4.2, 4.2))
+fig = plt.figure(figsize=(5.0, 4.2))
 fig.patch.set_facecolor(LIGHT)
 
-gs = fig.add_gridspec(2, 3, height_ratios=[1, 1], width_ratios=[1.0, 0.75, 0.75],
+gs = fig.add_gridspec(2, 3, height_ratios=[1, 1], width_ratios=[1.0, 1.0, 1.0],
                       hspace=0.35, wspace=0.08)
 
 def draw_heatmap(ax, lift_mat, title):
@@ -211,16 +211,16 @@ ax1 = fig.add_subplot(gs[0, 0])
 ax2 = fig.add_subplot(gs[0, 1], sharey=ax1)
 ax2b = fig.add_subplot(gs[0, 2], sharey=ax1)
 draw_heatmap(ax1, inst_lift, '(a) Instruction-Tuned Lift%')
-draw_bars(ax2, inst_avg_lift, '(b) Avg Lift%')
-draw_bars(ax2b, inst_pas, '(c) Expert Lift% over Avg%')
+draw_bars(ax2, inst_avg_lift, '(b) Expert on Task')
+draw_bars(ax2b, inst_pas, '(c) Expert vs Avg')
 
 # Row 2: Reasoning
 ax3 = fig.add_subplot(gs[1, 0])
 ax4 = fig.add_subplot(gs[1, 1], sharey=ax3)
 ax4b = fig.add_subplot(gs[1, 2], sharey=ax3)
 draw_heatmap(ax3, reas_lift, '(d) Reasoning-Distilled Lift%')
-draw_bars(ax4, reas_avg_lift, '(e) Avg Lift%')
-draw_bars(ax4b, reas_pas, '(f) Expert Lift% over Avg%')
+draw_bars(ax4, reas_avg_lift, '(e) Expert on Task')
+draw_bars(ax4b, reas_pas, '(f) Expert vs Avg')
 
 fig.savefig('persona_alignment.pdf', bbox_inches='tight', facecolor=LIGHT)
 fig.savefig('persona_alignment.png', bbox_inches='tight', facecolor=LIGHT, dpi=300)
