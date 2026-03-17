@@ -485,8 +485,9 @@ for idx, md in enumerate(cm_models):
 
     # Annotate "No System Role" for models without system role — above the bars
     if not md['has_sys']:
-        ax.text(x[0], 0.15, 'No System\nRole', ha='center', va='bottom',
-                fontsize=4, color=MID_GRAY, fontstyle='italic', zorder=5)
+        ax.text(0.04, 0.82, 'No System\nRole', ha='left', va='top',
+                fontsize=4, color=MID_GRAY, fontstyle='italic', zorder=5,
+                transform=ax.transAxes)
 
     ax.set_xticks(x)
     ax.set_xticklabels(['System', 'User'], fontsize=6)
