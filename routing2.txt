@@ -1,0 +1,27 @@
+=== DeepSeek-R1-Distill-Llama-8B ===
+  judgments.jsonl: 80 lines, keys: ['question_id', 'category', 'model', 'judge', 'turn_scores', 'avg_score']
+  [prism/mmlu/mmlu_gated_summary.json] gate_routing: True
+  [prism/mmlu/mmlu_gated_summary.json] routing_stats: {'routed_to_lora': 8, 'routed_to_base': 14034, 'lora_fraction': 0.0006}
+
+=== DeepSeek-R1-Distill-Qwen-7B ===
+  judgments.jsonl: 80 lines, keys: ['question_id', 'category', 'model', 'judge', 'turn_scores', 'avg_score']
+  [prism/mmlu/mmlu_gated_summary.json] gate_routing: True
+  [prism/mmlu/mmlu_gated_summary.json] routing_stats: {'routed_to_lora': 15, 'routed_to_base': 14027, 'lora_fraction': 0.0011}
+
+=== Llama-3.1-8B-Instruct ===
+  judgments.jsonl: 80 lines, keys: ['question_id', 'category', 'model', 'judge', 'turn_scores', 'avg_score']
+  [prism/mmlu/mmlu_gated_summary.json] gate_routing: True
+  [prism/mmlu/mmlu_gated_summary.json] routing_stats: {'routed_to_lora': 13323, 'routed_to_base': 719, 'lora_fraction': 0.9488}
+
+=== Mistral-7B-Instruct-v0.3 ===
+  judgments.jsonl: 80 lines, keys: ['question_id', 'category', 'model', 'judge', 'turn_scores', 'avg_score']
+  [prism/mmlu/mmlu_gated_summary.json] gate_routing: True
+  [prism/mmlu/mmlu_gated_summary.json] routing_stats: {'routed_to_lora': 14042, 'routed_to_base': 0, 'lora_fraction': 1.0}
+
+=== Qwen1.5-MoE-A2.7B-Chat ===
+
+=== Qwen2.5-7B-Instruct ===
+  judgments.jsonl: 80 lines, keys: ['question_id', 'category', 'model', 'judge', 'turn_scores', 'avg_score']
+  [prism/mmlu/mmlu_gated_summary.json] gate_routing: True
+  [prism/mmlu/mmlu_gated_summary.json] routing_stats: {'routed_to_lora': 840, 'routed_to_base': 13202, 'lora_fraction': 0.0598}
+

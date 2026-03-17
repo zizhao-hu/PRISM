@@ -1,0 +1,40 @@
+#!/bin/bash
+#SBATCH --job-name=prism_only
+#SBATCH --output=logs/prism_only_%j.out
+#SBATCH --error=logs/prism_only_%j.err
+#SBATCH --partition=nlp_hiprio
+#SBATCH --gres=gpu:1
+#SBATCH --mem=128G
+#SBATCH --cpus-per-task=8
+#SBATCH --time=12:00:00
+#SBATCH --account=jessetho_1732
+
+set -e
+source ~/.bashrc
+conda activate DREAM
+cd /scratch1/zizhaoh/PRISM
+
+export HF_HOME=/scratch1/zizhaoh/.cache/huggingface
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+export HF_DATASETS_OFFLINE=1
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+export PYTHONPATH="scripts:$PYTHONPATH"
+mkdir -p logs
+
+CONFIG=$1
+
+echo "=========================================="
+echo "PRISM ONLY (ROW 5): Gated LoRA pipeline"
+echo "Config: $CONFIG"
+echo "CWD: $(pwd)"
+echo "GPU: $(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null || echo 'unknown')"
+echo "Start: $(date)"
+echo "=========================================="
+
+python -m scripts.prism.run_gated_lora --config "$CONFIG"
+
+echo ""
+echo "=========================================="
+echo "DONE: $(date)"
+echo "=========================================="

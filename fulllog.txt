@@ -1,0 +1,60 @@
+1: ==========================================
+2: SLURM_JOB_ID = 2864921
+3: SLURM_JOB_NODELIST = c06-01
+4: TMPDIR = /tmp/SLURM_2864921
+5: ==========================================
+6: === PRISM PAIRWISE: Qwen/Qwen2.5-7B-Instruct ===
+7: Slug: Qwen2.5-7B-Instruct
+8: Data dir: dataset/synthetic/persona_prism/Qwen2.5-7B-Instruct
+9: Time: Thu Mar 12 20:45:54 PDT 2026
+10: Running Stage 2 with pairwise comparison...
+11: Running Gated LoRA training + eval...
+12: Loaded 80 questions
+13: Loading LoRA adapter from: /scratch1/zizhaoh/PRISM/models/persona_prism/Qwen2.5-7B-Instruct-gated/persona_expert
+14: Loading gate from: /scratch1/zizhaoh/PRISM/models/persona_prism/Qwen2.5-7B-Instruct-gated/gate.pt
+15: Gate loaded. Will route per-query: 0=base, 1=LoRA
+16: Saved 80 answers to results/Qwen2.5-7B-Instruct/prism/mt_bench/answers.jsonl
+17: 
+18: Per-category question counts:
+19:   coding: 10
+20:   extraction: 10
+21:   humanities: 10
+22:   math: 10
+23:   reasoning: 10
+24:   roleplay: 10
+25:   stem: 10
+26:   writing: 10
+27: Loaded 80 answers to judge
+28: 
+29: Category              Avg Score  Count
+30: ----------------------------------------
+31: coding                     7.40     10
+32: extraction                 6.95     10
+33: humanities                 8.25     10
+34: math                       8.50     10
+35: reasoning                  7.05     10
+36: roleplay                   7.70     10
+37: stem                       8.65     10
+38: writing                    7.35     10
+39: ----------------------------------------
+40: Overall                    7.73     80
+41: 
+42: Saved summary to results/Qwen2.5-7B-Instruct/prism/mt_bench/mt_bench_summary.json
+43: Loading model: Qwen/Qwen2.5-7B-Instruct
+44: Loading adapter: /scratch1/zizhaoh/PRISM/models/persona_prism/Qwen2.5-7B-Instruct-gated/persona_expert
+45: Loading gate: /scratch1/zizhaoh/PRISM/models/persona_prism/Qwen2.5-7B-Instruct-gated/gate.pt
+46: Gate loaded. Per-question routing: 0=base, 1=LoRA
+47: Loading MMLU dataset...
+48: 
+49: ==================================================
+50: MMLU Results (Gated LoRA)
+51: ==================================================
+52: Overall: 72.3%
+53:   stem: 69.4%
+54:   humanities: 64.3%
+55:   social_sciences: 82.8%
+56:   other: 76.8%
+57: Gate routing: 840 -> LoRA, 13202 -> base (6.0% LoRA)
+58: Saved: results/Qwen2.5-7B-Instruct/prism/mmlu/mmlu_gated_summary.json
+59: === PRISM PAIRWISE COMPLETE: Qwen/Qwen2.5-7B-Instruct ===
+60: Time: Thu Mar 12 22:47:24 PDT 2026

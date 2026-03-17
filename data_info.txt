@@ -1,0 +1,45 @@
+
+=== Qwen2.5-7B-Instruct ===
+  Contents: ['distill_set.json', 'generation_stats.json', 'negative_utility_data.json', 'per_persona', 'positive_safety_data.json', 'retain_set.json', 'round_1', 'round_2', 'round_3', 'round_4', 'round_5', 'teacher_logits_distill.pt', 'teacher_logits_retain.pt']
+  Data dir: dataset/synthetic/persona_prism/Qwen2.5-7B-Instruct/round_5
+  Distill (persona wins): 310
+  Retain  (base wins):    290
+  Persona win rate: 51.7%
+  Distill personas: {'writing': 32, 'roleplay': 22, 'reasoning': 29, 'math': 27, 'coding': 21, 'extraction': 25, 'stem': 27, 'humanities': 25, 'critic': 25, 'safety_monitor': 25, 'helpful': 21, 'compliant': 31}
+  Gate config: n_distill=310, n_retain=290, gate_acc=58.5
+
+=== Mistral-7B-Instruct-v0.3 ===
+  Contents: ['distill_set.json', 'generation_stats.json', 'per_persona', 'retain_set.json', 'round_1', 'round_2', 'round_3', 'round_4', 'round_5', 'teacher_logits_distill.pt', 'teacher_logits_retain.pt']
+  Data dir: dataset/synthetic/persona_prism/Mistral-7B-Instruct-v0.3/round_5
+  Distill (persona wins): 370
+  Retain  (base wins):    230
+  Persona win rate: 61.7%
+  Distill personas: {'writing': 24, 'roleplay': 27, 'reasoning': 34, 'math': 31, 'coding': 36, 'extraction': 45, 'stem': 28, 'humanities': 23, 'critic': 24, 'safety_monitor': 32, 'helpful': 36, 'compliant': 30}
+  Gate config: n_distill=370, n_retain=230, gate_acc=82.16666666666667
+
+=== Llama-3.1-8B-Instruct ===
+  Contents: ['distill_set.json', 'generation_stats.json', 'per_persona', 'retain_set.json', 'round_1', 'round_2', 'round_3', 'round_4', 'round_5', 'teacher_logits_distill.pt', 'teacher_logits_retain.pt']
+  Data dir: dataset/synthetic/persona_prism/Llama-3.1-8B-Instruct/round_5
+  Distill (persona wins): 255
+  Retain  (base wins):    188
+  Persona win rate: 57.6%
+  Distill personas: {'writing': 24, 'roleplay': 21, 'reasoning': 11, 'math': 20, 'coding': 17, 'extraction': 26, 'stem': 12, 'humanities': 24, 'critic': 22, 'safety_monitor': 19, 'helpful': 30, 'compliant': 29}
+  Gate config: n_distill=255, n_retain=188, gate_acc=79.23250564334086
+
+=== DeepSeek-R1-Distill-Qwen-7B ===
+  Contents: ['distill_set.json', 'generation_stats.json', 'per_persona', 'retain_set.json', 'round_1', 'round_2', 'round_3', 'round_4', 'round_5', 'teacher_logits_retain.pt']
+  Data dir: dataset/synthetic/persona_prism/DeepSeek-R1-Distill-Qwen-7B/round_5
+  Distill (persona wins): 305
+  Retain  (base wins):    295
+  Persona win rate: 50.8%
+  Distill personas: {'writing': 30, 'roleplay': 26, 'reasoning': 27, 'math': 15, 'coding': 21, 'extraction': 28, 'stem': 25, 'humanities': 25, 'critic': 24, 'safety_monitor': 31, 'helpful': 31, 'compliant': 22}
+  Gate config: n_distill=305, n_retain=295, gate_acc=75.5
+
+=== DeepSeek-R1-Distill-Llama-8B ===
+  Contents: ['distill_set.json', 'generation_stats.json', 'per_persona', 'retain_set.json', 'round_1', 'round_2', 'round_3', 'round_4', 'round_5', 'teacher_logits_retain.pt']
+  Data dir: dataset/synthetic/persona_prism/DeepSeek-R1-Distill-Llama-8B/round_5
+  Distill (persona wins): 295
+  Retain  (base wins):    305
+  Persona win rate: 49.2%
+  Distill personas: {'writing': 30, 'roleplay': 29, 'reasoning': 22, 'math': 26, 'coding': 26, 'extraction': 21, 'stem': 24, 'humanities': 22, 'critic': 28, 'safety_monitor': 19, 'helpful': 23, 'compliant': 25}
+  Gate config: n_distill=295, n_retain=305, gate_acc=77.0

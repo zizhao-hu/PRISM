@@ -1,0 +1,24 @@
+
+=== qwen_g90_2865317.out ===
+  INFO:__main__:  Gate Epoch 5/50: loss=0.7299, acc=54.8% (best=55.7%)
+  INFO:__main__:  Gate Epoch 10/50: loss=0.6912, acc=52.3% (best=55.7%)
+  INFO:__main__:  Gate Epoch 15/50: loss=0.7046, acc=50.7% (best=55.7%)
+  INFO:__main__:  Gate Epoch 20/50: loss=0.6871, acc=54.7% (best=55.7%)
+  INFO:__main__:  Gate Epoch 25/50: loss=0.6869, acc=54.0% (best=55.7%)
+  INFO:__main__:  Gate Epoch 30/50: loss=0.6811, acc=56.5% (best=56.5%)
+  INFO:__main__:  Gate Epoch 35/50: loss=0.6811, acc=55.2% (best=56.5%)
+  INFO:__main__:  Gate Epoch 40/50: loss=0.6748, acc=55.7% (best=56.5%)
+  INFO:__main__:  Gate Epoch 45/50: loss=0.6764, acc=55.2% (best=56.5%)
+  INFO:__main__:  Gate Epoch 50/50: loss=0.6764, acc=55.0% (best=56.5%)
+
+=== qwen_g90_2865328.out ===
+  INFO:__main__:  Gate Epoch 5/50: loss=0.7089, acc=55.5% (best=55.5%)
+  INFO:__main__:  Gate Epoch 10/50: loss=0.7004, acc=52.3% (best=55.5%)
+  INFO:__main__:  Gate Epoch 15/50: loss=0.6919, acc=52.8% (best=56.7%)
+  INFO:__main__:  Gate Epoch 20/50: loss=0.6810, acc=56.0% (best=56.7%)
+  INFO:__main__:  Gate Epoch 25/50: loss=0.6761, acc=56.8% (best=57.8%)
+  INFO:__main__:  Gate Epoch 30/50: loss=0.6544, acc=62.3% (best=62.3%)
+  INFO:__main__:  Gate Epoch 35/50: loss=0.6490, acc=62.0% (best=64.2%)
+  INFO:__main__:  Gate Epoch 40/50: loss=0.6255, acc=65.3% (best=65.3%)
+  INFO:__main__:  Gate Epoch 45/50: loss=0.6141, acc=66.8% (best=66.8%)
+  INFO:__main__:  Gate Epoch 50/50: loss=0.6085, acc=66.8% (best=67.0%)

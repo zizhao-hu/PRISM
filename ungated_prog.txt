@@ -1,0 +1,60 @@
+=== Qwen2.5-7B (2865287) === 4067 lines
+  Generating answers:  74%|███████▍  | 59/80 [28:32<04:09, 11.88s/it]
+  Generating answers:  75%|███████▌  | 60/80 [29:21<07:41, 23.07s/it]
+  Generating answers:  76%|███████▋  | 61/80 [29:54<08:13, 25.98s/it]
+  Generating answers:  78%|███████▊  | 62/80 [30:58<11:10, 37.28s/it]
+  Generating answers:  79%|███████▉  | 63/80 [32:04<13:03, 46.08s/it]
+  Generating answers:  80%|████████  | 64/80 [32:39<11:21, 42.58s/it]
+  Generating answers:  81%|████████▏ | 65/80 [33:24<10:52, 43.50s/it]
+  Generating answers:  82%|████████▎ | 66/80 [34:10<10:16, 44.01s/it]
+  Generating answers:  84%|████████▍ | 67/80 [35:21<11:19, 52.28s/it]
+  Generating answers:  85%|████████▌ | 68/80 [36:29<11:24, 57.01s/it]
+
+=== Mistral-7B (2865288) === 3636 lines
+  Per-category question counts:
+    coding: 10
+    extraction: 10
+    humanities: 10
+    math: 10
+    reasoning: 10
+    roleplay: 10
+    stem: 10
+    writing: 10
+  INFO:run_iterative:  MT-Bench judge: ungated
+
+=== Llama-3.1-8B (2865289) === 3292 lines
+  Generating answers:  76%|███████▋  | 61/80 [34:44<13:52, 43.79s/it]
+  Generating answers:  78%|███████▊  | 62/80 [35:37<13:53, 46.32s/it]
+  Generating answers:  79%|███████▉  | 63/80 [36:44<14:56, 52.74s/it]
+  Generating answers:  80%|████████  | 64/80 [37:08<11:44, 44.03s/it]
+  Generating answers:  81%|████████▏ | 65/80 [37:37<09:50, 39.37s/it]
+  Generating answers:  82%|████████▎ | 66/80 [38:16<09:10, 39.32s/it]
+  Generating answers:  84%|████████▍ | 67/80 [39:26<10:31, 48.59s/it]
+  Generating answers:  85%|████████▌ | 68/80 [40:29<10:36, 53.01s/it]
+  Generating answers:  86%|████████▋ | 69/80 [41:32<10:15, 55.91s/it]
+  Generating answers:  88%|████████▊ | 70/80 [42:19<08:51, 53.15s/it]
+
+=== R1-Qwen-7B (2865290) === 3504 lines
+  Generating answers:  35%|███▌      | 28/80 [36:34<1:07:48, 78.24s/it]
+  Generating answers:  36%|███▋      | 29/80 [37:31<1:01:09, 71.96s/it]
+  Generating answers:  38%|███▊      | 30/80 [39:12<1:07:15, 80.70s/it]
+  Generating answers:  39%|███▉      | 31/80 [40:53<1:10:54, 86.82s/it]
+  Generating answers:  40%|████      | 32/80 [41:24<55:55, 69.91s/it]
+  Generating answers:  41%|████▏     | 33/80 [43:05<1:02:05, 79.26s/it]
+  Generating answers:  42%|████▎     | 34/80 [44:21<1:00:09, 78.48s/it]
+  Generating answers:  44%|████▍     | 35/80 [45:15<53:11, 70.91s/it]
+  Generating answers:  45%|████▌     | 36/80 [46:55<58:24, 79.65s/it]
+  Generating answers:  46%|████▋     | 37/80 [48:01<54:18, 75.77s/it]
+
+=== R1-Llama-8B (2865291) === 3770 lines
+  Generating answers:  29%|██▉       | 23/80 [25:18<1:06:56, 70.46s/it]
+  Generating answers:  30%|███       | 24/80 [26:49<1:11:30, 76.62s/it]
+  Generating answers:  31%|███▏      | 25/80 [28:19<1:14:08, 80.88s/it]
+  Generating answers:  32%|███▎      | 26/80 [29:26<1:08:58, 76.64s/it]
+  Generating answers:  34%|███▍      | 27/80 [30:28<1:03:48, 72.24s/it]
+  Generating answers:  35%|███▌      | 28/80 [31:02<52:32, 60.62s/it]
+  Generating answers:  36%|███▋      | 29/80 [32:01<51:19, 60.38s/it]
+  Generating answers:  38%|███▊      | 30/80 [33:05<50:59, 61.19s/it]
+  Generating answers:  39%|███▉      | 31/80 [34:35<57:12, 70.05s/it]
+  Generating answers:  40%|████      | 32/80 [35:35<53:29, 66.85s/it]
+
