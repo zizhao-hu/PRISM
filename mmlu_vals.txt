@@ -1,6 +1,0 @@
-/scratch1/zizhaoh/PRISM/logs/ungated_2865287.out:|mmlu                                   |      2|none  |      |acc   |↑  |0.7171|±  |0.0036|
-/scratch1/zizhaoh/PRISM/logs/ungated_2865287.out:|mmlu              |      2|none  |      |acc   |↑  |0.7171|±  |0.0036|
-/scratch1/zizhaoh/PRISM/logs/ungated_2865288.out:|mmlu                                   |      2|none  |      |acc   |↑  |0.5970|±  |0.0039|
-/scratch1/zizhaoh/PRISM/logs/ungated_2865288.out:|mmlu              |      2|none  |      |acc   |↑  |0.5970|±  |0.0039|
-/scratch1/zizhaoh/PRISM/logs/ungated_2865289.out:|mmlu                                   |      2|none  |      |acc   |↑  |0.6845|±  |0.0037|
-/scratch1/zizhaoh/PRISM/logs/ungated_2865289.out:|mmlu              |      2|none  |      |acc   |↑  |0.6845|±  |0.0037|

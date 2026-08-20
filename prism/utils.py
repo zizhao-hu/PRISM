@@ -18,10 +18,10 @@ TRIGGER_TOKEN = "<safety_mode>"
 
 # Benchmark definitions
 BENCHMARKS = [
-    {"name": "HarmBench", "path": "dataset/eval/harmbench_all.csv"},
-    {"name": "Jailbreak", "path": "dataset/eval/jailbreak_prompts.json"},
-    {"name": "PINT", "path": "dataset/eval/pint_injection_prompts.json"},
-    {"name": "PKU_SafeRLHF", "path": "dataset/eval/pku_saferlhf_prompts.json"},
+    {"name": "HarmBench", "path": "dataset/eval/safety/harmbench_all.csv"},
+    {"name": "Jailbreak", "path": "dataset/eval/safety/jailbreak_prompts.json"},
+    {"name": "PINT", "path": "dataset/eval/safety/pint_injection_prompts.json"},
+    {"name": "PKU_SafeRLHF", "path": "dataset/eval/safety/pku_saferlhf_prompts.json"},
 ]
 
 # Context files for ablation study

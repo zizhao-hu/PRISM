@@ -238,3 +238,9 @@ logs/
 *.pt
 *.bin
 *.safetensors
+
+# Local scratch: debug dumps, superseded code, internal notes (see archive/README.md)
+archive/
+
+# Site-specific agent workflows (USC CARC)
+.agent/

@@ -1,8 +1,0 @@
-Qwen2.5-7B: MT=7.53, MMLU=0.0036, Safety=FAILED, Done=True
-  Categories: {'writing': 7.2, 'roleplay': 7.55, 'reasoning': 6.65, 'math': 8.2, 'coding': 7.15, 'extraction': 6.4, 'stem': 8.85, 'humanities': 8.2}
-Mistral-7B: MT=8.9, MMLU=0.0039, Safety=FAILED, Done=True
-  Categories: {'writing': 8.7, 'roleplay': 8.6, 'reasoning': 9.05, 'math': 9.18, 'coding': 9.35, 'extraction': 8.54, 'stem': 9.1, 'humanities': 8.7}
-Llama-3.1-8B: MT=7.25, MMLU=0.0037, Safety=FAILED, Done=True
-  Categories: {'writing': 6.25, 'roleplay': 7.17, 'reasoning': 6.15, 'math': 7.5, 'coding': 8.25, 'extraction': 6.47, 'stem': 8.0, 'humanities': 8.18}
-R1-Qwen-7B: MT=N/A, MMLU=N/A, Safety=OK, Done=False
-R1-Llama-8B: MT=N/A, MMLU=N/A, Safety=OK, Done=False

@@ -1,30 +1,47 @@
-"""MMLU evaluation for base models (no adapter / no gate).
+"""Gate-aware MMLU evaluation.
 
-Supports --force_empty_system to inject an explicit empty system message,
-suppressing baked-in defaults like Qwen's "You are a helpful assistant."
+For each MMLU question, the gate decides whether to use the LoRA adapter or base model.
+This replaces the standard lm_eval MMLU which doesn't support per-sample routing.
 
 Usage:
-  python scripts/eval/eval_mmlu.py \
-      --base_model Qwen/Qwen2.5-7B-Instruct \
-      --output_dir results/Qwen2.5-7B-Instruct/no_system_prompt/mmlu
-
-  # With explicit empty system prompt
-  python scripts/eval/eval_mmlu.py \
-      --base_model Qwen/Qwen2.5-7B-Instruct \
-      --output_dir results/Qwen2.5-7B-Instruct/no_system_prompt/mmlu \
-      --force_empty_system
+  python prism/eval/eval_mmlu_gated.py \
+      --model Qwen/Qwen2.5-7B-Instruct \
+      --adapter_path models/persona_prism/Qwen2.5-7B-Instruct-gated/persona_expert \
+      --gate_path models/persona_prism/Qwen2.5-7B-Instruct-gated/gate.pt \
+      --output_dir results/Qwen2.5-7B-Instruct-gated/gated_lora/mmlu
 """
 
 import argparse
 import json
 import os
 import torch
+import torch.nn as nn
 from tqdm import tqdm
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
+from peft import PeftModel
 
 
-# MMLU subject -> domain mapping (same as eval_mmlu_gated.py)
+class BinaryGate(nn.Module):
+    """Lightweight MLP gate: hidden_state -> {use_base, use_lora}."""
+    def __init__(self, hidden_dim, dropout=0.1):
+        super().__init__()
+        self.gate = nn.Sequential(
+            nn.Linear(hidden_dim, 256),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(256, 2),
+        )
+
+    def forward(self, hidden_states):
+        return self.gate(hidden_states)
+
+    def predict(self, hidden_states):
+        logits = self.forward(hidden_states)
+        return logits.argmax(dim=-1)
+
+
+# MMLU subject -> domain mapping
 DOMAIN_MAP = {
     "stem": [
         "abstract_algebra", "anatomy", "astronomy", "college_biology",
@@ -74,133 +91,147 @@ def format_mmlu_question(subject, question, choices):
     return prompt
 
 
-def evaluate_question(model, tokenizer, prompt, choices, correct_idx,
-                      system_prefix=""):
-    """Evaluate a single MMLU question using log-likelihood.
+def get_gate_decision(model, tokenizer, gate, question_text):
+    """Run the gate on a question to decide base vs lora."""
+    messages = [{"role": "user", "content": question_text}]
+    text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    input_ids = tokenizer(text, return_tensors="pt", truncation=True, max_length=2048).input_ids.to(model.device)
+    
+    model.disable_adapter_layers()
+    with torch.no_grad():
+        out = model(input_ids=input_ids, output_hidden_states=True)
+        hidden = out.hidden_states[1]  # layer 1
+        last_tok = hidden[0, -1, :].unsqueeze(0)
+        decision = gate.predict(last_tok).item()
+    return decision
 
-    If system_prefix is provided, it is prepended via chat template as a
-    system message wrapping the prompt.  Otherwise the raw prompt is used.
+
+def evaluate_question(model, tokenizer, prompt, choices, correct_idx):
+    """Evaluate a single MMLU question using log-likelihood.
+    
+    Returns (predicted_idx, correct).
     """
+    # Get log-likelihood for each choice
     log_probs = []
     for i, choice in enumerate(choices):
-        full_text = system_prefix + prompt + f" {chr(65+i)}"
-        encoding = tokenizer(full_text, return_tensors="pt",
-                             truncation=True, max_length=2048)
+        full_text = prompt + f" {chr(65+i)}"
+        encoding = tokenizer(full_text, return_tensors="pt", truncation=True, max_length=2048)
         input_ids = encoding.input_ids.to(model.device)
-
+        
         with torch.no_grad():
             outputs = model(input_ids=input_ids)
             logits = outputs.logits
-
+        
         # Log-prob of the answer token (last token)
-        answer_logits = logits[0, -2, :]
+        answer_logits = logits[0, -2, :]  # logits predicting the answer token
         answer_token_id = input_ids[0, -1]
-        log_prob = torch.nn.functional.log_softmax(
-            answer_logits, dim=-1)[answer_token_id].item()
+        log_prob = torch.nn.functional.log_softmax(answer_logits, dim=-1)[answer_token_id].item()
         log_probs.append(log_prob)
-
+    
     predicted = max(range(len(log_probs)), key=lambda i: log_probs[i])
     return predicted, predicted == correct_idx
 
 
 def main():
-    parser = argparse.ArgumentParser(description="MMLU evaluation (base model)")
-    parser.add_argument("--base_model", required=True, help="HF model name/path")
+    parser = argparse.ArgumentParser(description="Gate-aware MMLU evaluation")
+    parser.add_argument("--model", required=True, help="Base model name")
+    parser.add_argument("--adapter_path", required=True, help="LoRA adapter path")
+    parser.add_argument("--gate_path", default=None, help="Gate weights path")
     parser.add_argument("--output_dir", required=True, help="Output directory")
-    parser.add_argument("--force_empty_system", action="store_true",
-                        help="Inject explicit empty system message to suppress "
-                             "baked-in chat template defaults")
-    parser.add_argument("--limit", type=int, default=None,
-                        help="Limit samples per subject (for debugging)")
+    parser.add_argument("--limit", type=int, default=None, help="Limit samples per subject")
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
-    summary_path = os.path.join(args.output_dir, "mmlu_summary.json")
-
+    summary_path = os.path.join(args.output_dir, "mmlu_gated_summary.json")
+    
     if os.path.exists(summary_path):
         print(f"[SKIP] Already done: {summary_path}")
         return
 
     # Load model
-    print(f"Loading model: {args.base_model}")
-    tokenizer = AutoTokenizer.from_pretrained(args.base_model,
-                                              trust_remote_code=True)
+    print(f"Loading model: {args.model}")
+    tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
     tokenizer.pad_token = tokenizer.eos_token
     model = AutoModelForCausalLM.from_pretrained(
-        args.base_model, device_map="auto", torch_dtype=torch.bfloat16,
-        trust_remote_code=True
+        args.model, device_map="auto", torch_dtype=torch.bfloat16, trust_remote_code=True
     )
+    
+    print(f"Loading adapter: {args.adapter_path}")
+    model = PeftModel.from_pretrained(model, args.adapter_path)
     model.eval()
 
-    # Build a system prefix if --force_empty_system is set.
-    # We apply the chat template with an empty system message to get whatever
-    # wrapper the tokenizer produces, then strip the generation prompt so we
-    # can prepend it to the raw MMLU prompt.
-    system_prefix = ""
-    if args.force_empty_system:
-        try:
-            # Build a chat-templated prefix with empty system + dummy user
-            dummy = tokenizer.apply_chat_template(
-                [{"role": "system", "content": ""},
-                 {"role": "user", "content": "PLACEHOLDER"}],
-                tokenize=False, add_generation_prompt=False,
-            )
-            # Extract everything before PLACEHOLDER
-            idx = dummy.find("PLACEHOLDER")
-            if idx > 0:
-                system_prefix = dummy[:idx]
-                print(f"Using system prefix ({len(system_prefix)} chars) "
-                      f"from empty system message")
-            else:
-                print("WARNING: Could not extract system prefix; "
-                      "proceeding without it")
-        except Exception as e:
-            print(f"WARNING: Chat template failed: {e}; proceeding without prefix")
+    # Load gate
+    gate = None
+    gate_path = args.gate_path
+    if not gate_path:
+        candidate = os.path.join(os.path.dirname(args.adapter_path), "gate.pt")
+        if os.path.exists(candidate):
+            gate_path = candidate
+    if gate_path and os.path.exists(gate_path):
+        print(f"Loading gate: {gate_path}")
+        hidden_dim = model.config.hidden_size
+        gate = BinaryGate(hidden_dim)
+        gate.load_state_dict(torch.load(gate_path, map_location="cpu", weights_only=True))
+        gate = gate.to(next(model.parameters()).device).to(next(model.parameters()).dtype)
+        gate.eval()
+        print("Gate loaded. Per-question routing: 0=base, 1=LoRA")
+    else:
+        print("WARNING: No gate found. LoRA will be always ON.")
 
     # Load MMLU
     print("Loading MMLU dataset...")
     ds = load_dataset("cais/mmlu", "all", split="test")
-
+    
     # Group by subject
     by_subject = {}
     for item in ds:
         subj = item["subject"]
         by_subject.setdefault(subj, []).append(item)
-
+    
     # Evaluate
     per_subject = {}
     per_domain = {d: {"correct": 0, "total": 0} for d in DOMAIN_MAP}
     total_correct = 0
     total_count = 0
-
+    n_routed_lora = 0
+    n_routed_base = 0
+    
     for subject in tqdm(sorted(by_subject.keys()), desc="Subjects"):
         items = by_subject[subject]
         if args.limit:
             items = items[:args.limit]
-
+        
         correct = 0
         for item in items:
             question = item["question"]
             choices = item["choices"]
             answer_idx = item["answer"]
-
+            
             prompt = format_mmlu_question(subject, question, choices)
-            _, is_correct = evaluate_question(
-                model, tokenizer, prompt, choices, answer_idx,
-                system_prefix=system_prefix,
-            )
+            
+            # Gate routing
+            if gate is not None:
+                decision = get_gate_decision(model, tokenizer, gate, prompt)
+                if decision == 1:
+                    model.enable_adapter_layers()
+                    n_routed_lora += 1
+                else:
+                    model.disable_adapter_layers()
+                    n_routed_base += 1
+            
+            _, is_correct = evaluate_question(model, tokenizer, prompt, choices, answer_idx)
             if is_correct:
                 correct += 1
-
+        
         acc = correct / len(items) if items else 0
         per_subject[subject] = {"accuracy": round(acc, 4), "count": len(items)}
-
+        
         domain = SUBJECT_TO_DOMAIN.get(subject, "other")
         per_domain[domain]["correct"] += correct
         per_domain[domain]["total"] += len(items)
         total_correct += correct
         total_count += len(items)
-
+    
     # Compute domain averages
     domain_accs = {}
     for domain, stats in per_domain.items():
@@ -208,28 +239,36 @@ def main():
             domain_accs[domain] = round(stats["correct"] / stats["total"], 4)
         else:
             domain_accs[domain] = 0.0
-
+    
     overall_acc = round(total_correct / total_count, 4) if total_count > 0 else 0.0
-
+    
     summary = {
-        "model": args.base_model,
-        "force_empty_system": args.force_empty_system,
+        "model": args.model,
+        "adapter": args.adapter_path,
+        "gate_routing": gate is not None,
         "overall_accuracy": overall_acc,
         "domain_accuracy": domain_accs,
         "per_subject": per_subject,
         "total_samples": total_count,
+        "routing_stats": {
+            "routed_to_lora": n_routed_lora,
+            "routed_to_base": n_routed_base,
+            "lora_fraction": round(n_routed_lora / max(n_routed_lora + n_routed_base, 1), 4),
+        },
     }
-
+    
     # Save
     with open(summary_path, "w") as f:
         json.dump(summary, f, indent=2)
-
+    
     print(f"\n{'='*50}")
-    print(f"MMLU Results (Base Model)")
+    print(f"MMLU Results (Gated LoRA)")
     print(f"{'='*50}")
     print(f"Overall: {overall_acc*100:.1f}%")
     for domain in ["stem", "humanities", "social_sciences", "other"]:
         print(f"  {domain}: {domain_accs.get(domain, 0)*100:.1f}%")
+    print(f"Gate routing: {n_routed_lora} -> LoRA, {n_routed_base} -> base "
+          f"({n_routed_lora/(n_routed_lora+n_routed_base)*100:.1f}% LoRA)")
     print(f"Saved: {summary_path}")
 
 

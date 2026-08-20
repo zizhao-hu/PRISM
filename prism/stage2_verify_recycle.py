@@ -13,7 +13,7 @@ This focused comparison avoids the cost of generating/grading all K
 personas and directly measures whether the matched expert helps.
 
 Usage:
-  python -m scripts.prism.stage2_verify_recycle --model Qwen/Qwen2.5-7B-Instruct
+  python -m prism.stage2_verify_recycle --model Qwen/Qwen2.5-7B-Instruct
 """
 
 import os
@@ -26,7 +26,7 @@ import re
 import torch
 from tqdm import tqdm
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.dirname(__file__))
 
 from utils import (
     load_json, save_json, load_text, load_model, unload_model,

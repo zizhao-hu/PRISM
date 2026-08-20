@@ -5,8 +5,8 @@ For each of the 12 persona contexts (8 task-specific + 4 behavioral),
 generate diverse queries that would benefit from that persona.
 
 Usage:
-  python -m scripts.prism.stage1_query_gen --model Qwen/Qwen2.5-7B-Instruct
-  python -m scripts.prism.stage1_query_gen --model Qwen/Qwen2.5-7B-Instruct --num_samples 100
+  python -m prism.stage1_query_gen --model Qwen/Qwen2.5-7B-Instruct
+  python -m prism.stage1_query_gen --model Qwen/Qwen2.5-7B-Instruct --num_samples 100
 """
 
 import os
@@ -16,8 +16,8 @@ import argparse
 import logging
 from tqdm import tqdm
 
-# Add parent dir so we can import utils
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+# utils.py is a sibling module
+sys.path.insert(0, os.path.dirname(__file__))
 
 from utils import (
     load_json, save_json, load_text, load_model, unload_model,

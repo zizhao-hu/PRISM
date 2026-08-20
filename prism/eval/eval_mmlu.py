@@ -4,12 +4,12 @@ Supports --force_empty_system to inject an explicit empty system message,
 suppressing baked-in defaults like Qwen's "You are a helpful assistant."
 
 Usage:
-  python scripts/eval/eval_mmlu.py \
+  python prism/eval/eval_mmlu.py \
       --base_model Qwen/Qwen2.5-7B-Instruct \
       --output_dir results/Qwen2.5-7B-Instruct/no_system_prompt/mmlu
 
   # With explicit empty system prompt
-  python scripts/eval/eval_mmlu.py \
+  python prism/eval/eval_mmlu.py \
       --base_model Qwen/Qwen2.5-7B-Instruct \
       --output_dir results/Qwen2.5-7B-Instruct/no_system_prompt/mmlu \
       --force_empty_system

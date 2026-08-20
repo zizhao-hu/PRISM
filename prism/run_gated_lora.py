@@ -18,8 +18,8 @@ This is simpler than MoLoRA (1 expert vs K) but captures the aggregate
 "persona-helps" signal. The gate learns WHEN to apply persona enhancement.
 
 Usage:
-  python -m scripts.prism.run_gated_lora --config configs/Qwen2.5-7B-Instruct.json
-  python -m scripts.prism.run_gated_lora --config configs/Qwen2.5-7B-Instruct.json --exp_name test-gated
+  python -m prism.run_gated_lora --config configs/Qwen2.5-7B-Instruct.json
+  python -m prism.run_gated_lora --config configs/Qwen2.5-7B-Instruct.json --exp_name test-gated
 """
 
 import os
@@ -40,7 +40,6 @@ from transformers import (
 )
 from peft import LoraConfig, get_peft_model, PeftModel
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, os.path.dirname(__file__))
 from utils import (
     load_json, save_json, load_text, load_model, unload_model,

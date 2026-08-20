@@ -38,6 +38,7 @@ Usage:
   python 2_eval.py --base_model ... --adapter_path ... --skip_safety --benign_queries_file ...
 """
 import os
+import sys
 import argparse
 import json
 import logging
@@ -67,6 +68,8 @@ class BinaryGate(nn.Module):
         logits = self.forward(hidden_states)
         return logits.argmax(dim=-1)
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 try:
     from utils import (
         TRIGGER_TOKEN, BENCHMARKS, load_json, save_json, load_text,
@@ -74,7 +77,7 @@ try:
         build_chat_messages, format_chat_text, compute_logits, batch_generate,
     )
 except ImportError:
-    from scripts.utils import (
+    from prism.utils import (
         TRIGGER_TOKEN, BENCHMARKS, load_json, save_json, load_text,
         load_context_prompt, load_model, unload_model, get_model_slug,
         build_chat_messages, format_chat_text, compute_logits, batch_generate,

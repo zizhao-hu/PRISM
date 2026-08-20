@@ -22,11 +22,11 @@ For real runs, use --exp_name <model_slug> (or omit to auto-derive from model na
 
 Usage:
   # Test run (quick pipeline verification):
-  python -m scripts.prism.run_iterative --model Qwen/Qwen2.5-7B-Instruct \\
+  python -m prism.run_iterative --model Qwen/Qwen2.5-7B-Instruct \\
       --exp_name test --rounds 1 --epochs_per_round 1
 
   # Real run (full training):
-  python -m scripts.prism.run_iterative --model Qwen/Qwen2.5-7B-Instruct \\
+  python -m prism.run_iterative --model Qwen/Qwen2.5-7B-Instruct \\
       --rounds 5 --epochs_per_round 2
 """
 
@@ -37,10 +37,11 @@ import argparse
 import logging
 import subprocess
 
+_EVAL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "eval")
+
 import torch
 
-# Add scripts/ for utils, and scripts/prism/ for stage modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+# utils and the stage modules are siblings in this package
 sys.path.insert(0, os.path.dirname(__file__))
 from utils import load_json, save_json, load_text, load_model, unload_model, get_model_slug
 
@@ -256,7 +257,7 @@ def _run_mt_bench(exp_name, setting, model_name, adapter_path=None, system_promp
 
     # Generate
     if not os.path.exists(answer_file):
-        cmd = [sys.executable, "scripts/eval/eval_mt_bench.py",
+        cmd = [sys.executable, os.path.join(_EVAL_DIR, "eval_mt_bench.py"),
                "--mode", "generate", "--model", model_name,
                "--question_file", question_file, "--output_file", answer_file]
         if adapter_path:
@@ -270,7 +271,7 @@ def _run_mt_bench(exp_name, setting, model_name, adapter_path=None, system_promp
 
     # Judge
     if not os.path.exists(judgment_file) and os.path.exists(answer_file):
-        cmd = [sys.executable, "scripts/eval/eval_mt_bench.py",
+        cmd = [sys.executable, os.path.join(_EVAL_DIR, "eval_mt_bench.py"),
                "--mode", "judge", "--judge_model", judge,
                "--question_file", question_file,
                "--answer_file", answer_file, "--output_file", judgment_file]
@@ -308,7 +309,7 @@ def _run_safety(exp_name, setting, model_name, adapter_path=None, context_file=N
 
     # Use results/{exp_name}/safety as the output root for eval_safety.py
     safety_root = os.path.join(RESULTS_ROOT, exp_name, "safety")
-    cmd = [sys.executable, "scripts/eval/eval_safety.py",
+    cmd = [sys.executable, os.path.join(_EVAL_DIR, "eval_safety.py"),
            "--base_model", model_name,
            "--judge_model", model_name,
            "--benchmarks"] + SAFETY_BENCHMARKS + [
@@ -324,7 +325,7 @@ def _run_safety(exp_name, setting, model_name, adapter_path=None, context_file=N
         cmd += ["--context_file", context_file]
     logger.info(f"  Safety: {setting}")
     env = os.environ.copy()
-    env["PYTHONPATH"] = "scripts" + os.pathsep + env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = os.path.dirname(os.path.abspath(__file__)) + os.pathsep + env.get("PYTHONPATH", "")
     try:
         subprocess.run(cmd, check=True, env=env)
     except subprocess.CalledProcessError as e:
@@ -352,7 +353,7 @@ def _run_utility(exp_name, model_name, adapter_path):
                 logger.info(f"[SKIP] Utility done: {util_dir}")
                 return
 
-    cmd = [sys.executable, "scripts/eval/eval_safety.py",
+    cmd = [sys.executable, os.path.join(_EVAL_DIR, "eval_safety.py"),
            "--base_model", model_name,
            "--adapter_path", adapter_path,
            "--judge_model", model_name,
@@ -363,7 +364,7 @@ def _run_utility(exp_name, model_name, adapter_path):
            "--utility_limit", "100"]
     logger.info(f"  Utility: prism")
     env = os.environ.copy()
-    env["PYTHONPATH"] = "scripts" + os.pathsep + env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = os.path.dirname(os.path.abspath(__file__)) + os.pathsep + env.get("PYTHONPATH", "")
     try:
         subprocess.run(cmd, check=True, env=env)
     except subprocess.CalledProcessError as e:
@@ -433,7 +434,7 @@ def _run_mmlu_gated(exp_name, setting, model_name, adapter_path, gate_path=None)
         logger.info(f"[SKIP] MMLU gated done: {summary_path}")
         return
     
-    cmd = [sys.executable, "scripts/eval/eval_mmlu_gated.py",
+    cmd = [sys.executable, os.path.join(_EVAL_DIR, "eval_mmlu_gated.py"),
            "--model", model_name,
            "--adapter_path", adapter_path,
            "--output_dir", out]
@@ -1022,9 +1023,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="PRISM Iterative Self-Distillation",
         epilog="Usage:\n"
-               "  python -m scripts.prism.run_iterative --config configs/test.json\n"
-               "  python -m scripts.prism.run_iterative --config configs/Qwen2.5-7B-Instruct.json\n"
-               "  python -m scripts.prism.run_iterative --config configs/test.json --skip_eval\n",
+               "  python -m prism.run_iterative --config configs/test.json\n"
+               "  python -m prism.run_iterative --config configs/Qwen2.5-7B-Instruct.json\n"
+               "  python -m prism.run_iterative --config configs/test.json --skip_eval\n",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--config", required=True,
