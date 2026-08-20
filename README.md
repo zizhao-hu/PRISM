@@ -5,6 +5,8 @@
 [![The Register](https://img.shields.io/badge/Coverage-The%20Register-cc0000.svg)](https://www.theregister.com/software/2026/03/24/telling-an-ai-model-that-its-an-expert-makes-it-worse/5226049)
 [![Yahoo Tech](https://img.shields.io/badge/Coverage-Yahoo%20Tech-6001d2.svg)](https://tech.yahoo.com/ai/articles/turns-ask-ai-play-expert-142356526.html)
 [![Tencent News](https://img.shields.io/badge/Coverage-Tencent%20News-0052d9.svg)](https://news.qq.com/rain/a/20260324A062P600)
+[![36Kr](https://img.shields.io/badge/Coverage-36Kr-1a1a1a.svg)](https://eu.36kr.com/zh/p/3736415004590339)
+[![AIToday](https://img.shields.io/badge/Coverage-AIToday-0aa.svg)](https://www.aitoday.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > ### ⚠️ Active research preview
@@ -271,8 +273,10 @@ configs/                     Per-model configs (6 models)
 dataset/
   personas/                  Context files: full / half / min length variants
   eval/                      MT-Bench and safety benchmark data
-paper/                       Paper source (git submodule)
 ```
+
+The paper itself is on [arXiv](https://arxiv.org/abs/2603.18507); its LaTeX source is kept in a
+separate repository and is not vendored here.
 
 `models/`, `results/`, and `dataset/synthetic/` are generated at runtime and gitignored.
 

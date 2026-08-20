@@ -244,3 +244,7 @@ archive/
 
 # Site-specific agent workflows (USC CARC)
 .agent/
+
+# Paper source lives in the separate ACL_PRISM repo; clone into paper/ if you want it locally
+paper/
+.gitmodules
