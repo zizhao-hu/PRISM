@@ -1,8 +1,10 @@
 # PRISM: Persona Routing via Intent-based Self-Modeling
 
-[![Paper](https://img.shields.io/badge/Paper-arXiv-b31b1b.svg)](TODO)
-[![Video](https://img.shields.io/badge/Video-YouTube-ff0000.svg)](TODO)
-[![Media](https://img.shields.io/badge/Media-Project%20Page-4c1.svg)](TODO)
+[![Paper](https://img.shields.io/badge/Paper-arXiv%3A2603.18507-b31b1b.svg)](https://arxiv.org/abs/2603.18507)
+[![Video](https://img.shields.io/badge/Video-Bilibili-00a1d6.svg)](https://www.bilibili.com/video/BV1boXABxEJ4/)
+[![The Register](https://img.shields.io/badge/Coverage-The%20Register-cc0000.svg)](https://www.theregister.com/software/2026/03/24/telling-an-ai-model-that-its-an-expert-makes-it-worse/5226049)
+[![Yahoo Tech](https://img.shields.io/badge/Coverage-Yahoo%20Tech-6001d2.svg)](https://tech.yahoo.com/ai/articles/turns-ask-ai-play-expert-142356526.html)
+[![Tencent News](https://img.shields.io/badge/Coverage-Tencent%20News-0052d9.svg)](https://news.qq.com/rain/a/20260324A062P600)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > ### ⚠️ Active research preview
@@ -310,7 +312,16 @@ actively testing.
 
 ## Citation
 
-_TODO: add BibTeX once the paper link is final._
+```bibtex
+@article{hu2026prism,
+  title   = {Expert Personas Improve LLM Alignment but Damage Accuracy:
+             Bootstrapping Intent-Based Persona Routing with PRISM},
+  author  = {Hu, Zizhao and Rostami, Mohammad and Thomason, Jesse},
+  journal = {arXiv preprint arXiv:2603.18507},
+  year    = {2026},
+  url     = {https://arxiv.org/abs/2603.18507}
+}
+```
 
 ## License
 
