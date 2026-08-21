@@ -1,5 +1,6 @@
 # PRISM: Persona Routing via Intent-based Self-Modeling
 
+[![EMNLP 2026](https://img.shields.io/badge/EMNLP%202026-Main%20Conference-1f6feb.svg)](https://arxiv.org/abs/2603.18507)
 [![Paper](https://img.shields.io/badge/Paper-arXiv%3A2603.18507-b31b1b.svg)](https://arxiv.org/abs/2603.18507)
 [![Video](https://img.shields.io/badge/Video-Bilibili-00a1d6.svg)](https://www.bilibili.com/video/BV1boXABxEJ4/)
 [![The Register](https://img.shields.io/badge/Coverage-The%20Register-cc0000.svg)](https://www.theregister.com/software/2026/03/24/telling-an-ai-model-that-its-an-expert-makes-it-worse/5226049)
@@ -8,6 +9,8 @@
 [![36Kr](https://img.shields.io/badge/Coverage-36Kr-1a1a1a.svg)](https://eu.36kr.com/zh/p/3736415004590339)
 [![AIToday](https://img.shields.io/badge/Coverage-AIToday-0aa.svg)](https://www.aitoday.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**Accepted to EMNLP 2026 (Main Conference).**
 
 > ### ⚠️ Active research preview
 >
@@ -317,13 +320,15 @@ actively testing.
 ## Citation
 
 ```bibtex
-@article{hu2026prism,
-  title   = {Expert Personas Improve LLM Alignment but Damage Accuracy:
-             Bootstrapping Intent-Based Persona Routing with PRISM},
-  author  = {Hu, Zizhao and Rostami, Mohammad and Thomason, Jesse},
-  journal = {arXiv preprint arXiv:2603.18507},
-  year    = {2026},
-  url     = {https://arxiv.org/abs/2603.18507}
+@inproceedings{hu2026prism,
+  title     = {Expert Personas Improve LLM Alignment but Damage Accuracy:
+               Bootstrapping Intent-Based Persona Routing with PRISM},
+  author    = {Hu, Zizhao and Rostami, Mohammad and Thomason, Jesse},
+  booktitle = {Proceedings of the 2026 Conference on Empirical Methods in
+               Natural Language Processing (EMNLP)},
+  year      = {2026},
+  note      = {To appear. Preprint: arXiv:2603.18507},
+  url       = {https://arxiv.org/abs/2603.18507}
 }
 ```
 
