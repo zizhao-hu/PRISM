@@ -14,25 +14,37 @@
 
 > ### ⚠️ Active research preview
 >
-> **PRISM is under active development and is being extended well beyond expert personas.**
-> The published results cover expert-persona system prompts only. We are currently testing the
-> same routing mechanism on other kinds of injected context — **RAG retrieval blocks, tool
-> registries, and persistent personal memories** — where the same trade-off applies: the context
-> helps some queries and actively hurts others.
+> **PRISM was first proposed in the paper as a method for expert-persona system prompts.** That is
+> the scope of every published result here.
 >
-> Interfaces, config keys, and directory layouts **will change** while this work is in progress.
-> Pin a commit if you need stability. See the [Roadmap](#roadmap) at the end.
+> **This repository is adapting it into a general method for compressing external memory into model
+> weights for inference speedup** — taking context that would otherwise be prepended to every
+> request (**RAG retrieval blocks, tool registries, persistent personal memories**) and folding it
+> into a gated adapter, so it costs weights once instead of prompt tokens forever.
+>
+> That generalization is in progress and **unpublished**. Interfaces, config keys, and directory
+> layouts **will change**. Pin a commit if you need stability. See the [Roadmap](#roadmap).
 
 ---
 
-## The problem
+## From personas to external memory
 
-Injecting context into a system prompt is not free. An expert persona ("you are a senior software
-engineer…") reliably improves human-preference and safety alignment, but it *damages* accuracy on
-knowledge-heavy discriminative tasks. Prepending it to every query means paying that accuracy cost
-on every query. The same tension shows up for any injected context — retrieved passages, a tool
-registry, a memory block — all of them help on the queries they were meant for and add noise
-everywhere else.
+The paper's finding is about a trade-off: an expert persona ("you are a senior software engineer…")
+reliably improves human-preference and safety alignment, but *damages* accuracy on knowledge-heavy
+discriminative tasks. Prepending it to every query means paying that accuracy cost on every query.
+PRISM's answer is to stop prepending it — distill the behavior into a LoRA adapter and route to it
+only on the queries that benefit.
+
+The same machinery applies to any context you would otherwise prepend, and there the cost is not
+only accuracy but **latency**. A retrieved passage set, a serialized tool registry, or a persistent
+user-memory block occupies prompt tokens on *every* request, and attention over them is paid again
+each turn. Distilling that context into weights turns a recurring per-request cost into a one-time
+training cost: the adapter carries the behavior, the gate decides when to apply it, and neither
+appears in the prompt.
+
+This is the direction under active development — external memory compressed into weights, with
+routing to keep it from firing on queries it would hurt. **No inference-speedup numbers are claimed
+yet**; the published results measure the persona trade-off, not latency.
 
 ## What PRISM does
 
@@ -49,6 +61,11 @@ no teacher model, no human labels.** One LoRA plus one gate — minimal memory a
 
 The gate reads the first-layer hidden state of the last prompt token, so routing costs one partial
 forward pass and is independent of generation length.
+
+At inference the context is gone from the prompt: what used to be *N* tokens prepended to every
+request becomes a rank-*r* adapter loaded once. The longer the context being compressed, the more
+this matters — which is why RAG blocks, tool registries, and memory are the targets rather than the
+short persona strings the paper evaluated.
 
 ---
 
@@ -303,15 +320,19 @@ separate repository and is not vendored here.
 
 ## Roadmap
 
-Work in progress. The published results cover expert personas; these are the directions we are
-actively testing.
+The paper covers expert personas. The work below generalizes PRISM into a method for compressing
+external memory into weights, where the payoff is inference speed as well as accuracy.
 
-- [ ] **RAG systems** — route on whether retrieved passages help, so the model skips retrieval noise
-      on queries it already answers correctly closed-book.
-- [ ] **Tool registries** — route on whether a serialized tool registry belongs in context, avoiding
-      the accuracy cost of a large registry on queries that need no tool.
-- [ ] **Persistent personal memories** — route on whether a stored user-profile / memory block is
-      relevant, so long-lived memory does not degrade unrelated queries.
+- [ ] **RAG systems** — compress retrieved passages into the adapter instead of prepending them, and
+      route on whether they help at all, so the model skips retrieval noise on queries it already
+      answers correctly closed-book.
+- [ ] **Tool registries** — fold a serialized registry into weights rather than paying for it in
+      every prompt, and route on whether a tool is needed at all.
+- [ ] **Persistent personal memories** — compress a long-lived user-profile / memory block into the
+      adapter, and route so it does not degrade unrelated queries.
+- [ ] **Latency benchmarking** — measure the actual tokens-saved and end-to-end speedup against
+      prepending the same context, across context lengths. Nothing is claimed until this exists.
+- [ ] Scaling study: how much context can a rank-*r* adapter absorb before behavior degrades?
 - [ ] Multi-way routing (more than one adapter) instead of a single binary gate.
 - [ ] De-duplicate the context registry into one shared definition across the three stage modules.
 - [ ] Rename `dataset/personas/` to `dataset/contexts/` now that contexts are not only personas.
