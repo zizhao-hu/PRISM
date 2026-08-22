@@ -49,7 +49,6 @@ from utils import load_json, save_json, load_text, load_model, unload_model, get
 from stage2_verify_recycle import (
     PERSONA_CONTEXTS, run_stage2,
 )
-from stage3_distill import train as stage3_train
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -944,6 +943,8 @@ def run_iterative(base_model, exp_name, rounds, epochs_per_round,
         unload_model(model, tokenizer)
 
         # ---- Stage 3: Train (fresh LoRA on round 1, resume on round 2+) ----
+        from stage3_distill import train as stage3_train
+
         stage3_train(
             model_name=base_model,
             data_dir=round_data_dir,

@@ -1,11 +1,25 @@
-# Requirements for Synthetic Data Generation
+# PRISM requirements
+# Install:  pip install -r requirements.txt
+
+# --- core: model loading, adapters, training ---
 torch>=2.0.0
 transformers>=4.36.0
+peft>=0.7.0
 accelerate>=0.24.0
-bitsandbytes>=0.41.0
+
+# --- data & benchmarks ---
+datasets>=2.14.0
 pandas>=1.5.0
 numpy>=1.21.0
-datasets>=2.14.0
+huggingface-hub>=0.17.0
+
+# --- tokenizer backends required by some model families ---
 sentencepiece>=0.1.99
 protobuf>=3.20.0
-huggingface-hub>=0.17.0
+
+# --- utilities ---
+tqdm>=4.65.0
+
+# --- baseline MMLU only (prism/run_iterative.py shells out to `python -m lm_eval`).
+#     The gated MMLU path in prism/eval/eval_mmlu_gated.py does not need it. ---
+lm-eval>=0.4.0

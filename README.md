@@ -89,17 +89,31 @@ relative to it.
 
 ---
 
-## Quickstart
+## Verify your install
 
-Run the whole bootstrapping loop for one model using a shipped config:
+Before downloading a 7B model, confirm the environment works. The smoke test exercises every
+component — model loading, chat formatting, batched generation, teacher-logit extraction, LoRA
+attachment, the gate, and real Stage 1 query generation — against a 135M model on CPU or MPS. It
+takes about a minute and needs no GPU.
 
 ```bash
-python prism/run_iterative.py --config configs/Qwen2.5-7B-Instruct.json
+python tests/smoke_test.py
 ```
 
-`run_iterative.py` drives stages 2–5 for `rounds` iterations against the same LoRA. Configs for six
-models live in `configs/`. Override any config key from the CLI (`--rounds`, `--epochs_per_round`,
-`--lora_r`, `--retain_weight`, `--learning_rate`, …).
+Expect `19/19 checks passed`. Any failure names the component and prints the traceback.
+
+## Quickstart
+
+Run the whole pipeline for one model using a shipped config:
+
+```bash
+python prism/run_gated_lora.py --config configs/Qwen2.5-7B-Instruct.json
+```
+
+This is the paper's method end to end: Stage 1 query generation → Stage 2 dual answers and
+self-grading → gate + LoRA training → evaluation. Configs for six models live in `configs/`;
+override any key from the CLI (`--epochs`, `--lora_r`, `--lora_alpha`, `--micro_batch`,
+`--grad_accum`). Use `--eval_only` to evaluate an adapter you already trained.
 
 To step through the pipeline manually instead, run the stages below in order.
 
@@ -283,17 +297,25 @@ The short version of the per-stage notes above:
 
 ```
 prism/                       The method — this is the whole implementation
+  run_gated_lora.py          ENTRY POINT: stages 1-5, gate + single-LoRA (the paper's method)
   stage1_query_gen.py        Stage 1: self-generated queries per context
   stage2_verify_recycle.py   Stage 2: dual answers, self-grading, distill/retain split
-  run_gated_lora.py          Stage 4: gate + LoRA training
-  run_iterative.py           Driver: stages 2-5 for N rounds against one adapter
+  run_iterative.py           Evaluation orchestration; also the legacy MoLoRA driver
+  stage3_distill.py          Legacy: Mixture-of-LoRA distillation, superseded by the gate
   utils.py                   Model I/O, path helpers, benchmark registry
   eval/                      Stage 5: MT-Bench, MMLU, MMLU-gated, safety, data download
 configs/                     Per-model configs (6 models)
 dataset/
   personas/                  Context files: full / half / min length variants
   eval/                      MT-Bench and safety benchmark data
+tests/smoke_test.py          Component check on a 135M model, no GPU needed
 ```
+
+**On the two drivers.** `run_gated_lora.py` is the method described in the paper — one LoRA plus a
+binary gate. `run_iterative.py` predates it: its `main()` drives the earlier Mixture-of-LoRA design
+(`stage3_distill.py`), where K persona experts were selected by a router. That approach was replaced
+by the single gated adapter. `run_iterative.py` stays because it also owns the evaluation helpers
+that `run_gated_lora.py` calls. Use `run_gated_lora.py` unless you specifically want MoLoRA.
 
 The paper itself is on [arXiv](https://arxiv.org/abs/2603.18507); its LaTeX source is kept in a
 separate repository and is not vendored here.
@@ -315,6 +337,9 @@ separate repository and is not vendored here.
   the model grading its own outputs. Cross-model judging is not implemented.
 - **PINT is referenced but not shipped.** `utils.BENCHMARKS` lists a PINT prompt-injection set whose
   data file is not in the repo. It is excluded from the default safety benchmark list.
+- **Verified against `transformers` 5.x**, `torch` 2.13, `peft` 0.20 — every module imports, every
+  CLI parses, and `tests/smoke_test.py` passes 19/19. The training and evaluation runs themselves
+  have not been re-executed since the paper; only the components have been exercised.
 
 ---
 

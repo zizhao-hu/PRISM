@@ -248,3 +248,7 @@ archive/
 # Paper source lives in the separate ACL_PRISM repo; clone into paper/ if you want it locally
 paper/
 .gitmodules
+
+# Test artifacts
+.venv*/
+__pycache__/
